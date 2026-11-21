@@ -1,0 +1,55 @@
+# 로컬 개발용 의존 서비스: Postgres + SeaweedFS(S3 호환) + 시드 이미지 업로드
+# 백엔드까지 컨테이너로 띄우려면: docker compose --profile app up -d --build
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_DB: weekfit
+      POSTGRES_USER: weekfit
+      POSTGRES_PASSWORD: weekfit
+    ports:
+      - "${WEEKFIT_PG_PORT:-15432}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weekfit -d weekfit"]
+      interval: 5s
+      retries: 10
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    command: "server -dir=/data -s3 -filer"
+    ports:
+      - "${WEEKFIT_FILER_PORT:-18888}:8888" # filer HTTP
+      - "${WEEKFIT_S3_PORT:-18333}:8333" # S3 API
+    volumes:
+      - seaweed-data:/data
+
+  seaweed-seed:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      - seaweedfs
+    volumes:
+      - ./seed/images:/seed:ro
+      - ./scripts/seed-storage.sh:/seed-storage.sh:ro
+    entrypoint: ["sh", "/seed-storage.sh"]
+    restart: "no"
+
+  backend:
+    profiles: ["app"]
+    build: ./backend
+    env_file: .env
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/weekfit
+      STORAGE_ENDPOINT: http://seaweedfs:8333
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_started
+
+volumes:
+  pg-data:
+  seaweed-data:
