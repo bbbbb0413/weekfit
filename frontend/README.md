@@ -26,7 +26,7 @@ Node 22 기준이다. `npm run build`는 타입 검사 후 `dist/`에 빌드한�
 | `mock` (기본) | 백엔드 없이 브라우저 안의 데모 데이터로 동작한다. 옷장은 백엔드 `DemoClosetSeed`와 같은 17벌이고, 변경 내용은 localStorage에 저장된다. 날씨는 Open-Meteo를 직접 조회하고 실패하면 예시 예보를 쓴다 |
 | `real` | `VITE_API_BASE_URL`(기본 `http://localhost:8080`)의 백엔드를 호출한다 |
 
-`real` 모드에서 일정, 주간 계획, 옷 평가 엔드포인트가 404를 주면(백엔드가 해당 기능 없이 떠 있는 경우), 같은 응답 형식의 브라우저 규칙 계산(`src/api/local/engine.ts`)으로 대신한다. 엔드포인트가 응답하면 서버 결과를 그대로 쓴다. 가성비 찾기와 보유 검사는 사진 분석이 필요해 `mock` 모드에서는 예시 결과임을 화면에 표시한다. 가성비 찾기의 쇼핑몰 링크는 백엔드와 같은 규칙(`src/api/local/shopping.ts`)으로 만들어 `mock` 모드에서도 검색어를 고치면 실제 검색 결과로 연결된다.
+`real` 모드에서 일정, 주간 계획, 옷 평가 엔드포인트가 404를 주면(백엔드가 해당 기능 없이 떠 있는 경우), 같은 응답 형식의 브라우저 규칙 계산(`src/api/local/engine.ts`)으로 대신한다. 엔드포인트가 응답하면 서버 결과를 그대로 쓴다. 보유 검사는 사진 분석이 필요해 `mock` 모드에서는 예시 결과임을 화면에 표시하고, AI 제품 찾기는 쓸 수 없다고 안내한다. 쇼핑몰 링크는 백엔드와 같은 규칙(`src/api/local/shopping.ts`)으로 만들어 `mock` 모드에서도 검색어를 고치면 실제 검색 결과로 연결된다.
 
 사용자 식별 헤더(`X-User-Id`)는 보내지 않아 백엔드의 데모 사용자로 동작한다.
 
@@ -34,10 +34,10 @@ Node 22 기준이다. `npm run build`는 타입 검사 후 `dist/`에 빌드한�
 
 | 경로 | 화면 | 사용하는 API |
 |---|---|---|
-| `/` | 옷방. 3D 방 안의 인형에 옷을 입혀 보고 평가받는다. 창밖 날씨가 실제 예보에 맞춰 움직인다. 옷 등록, 상태 변경, 세탁 시작, 착용 기록 | `/api/clothes*`, `/api/laundry`, `/api/weather`, `/api/events`, `/api/outfits/evaluate`, `/api/wear-logs` |
-| `/week` | 주간 계획. 7일 코디, 세탁 할 일, 일정 직접 입력 | `/api/plans/week`, `/api/events*`, `/api/laundry` |
-| `/shop` | 사진으로 가성비 옷 찾기. 쇼핑몰 5곳의 검색 결과 링크를 3~5초 안에 먼저 보여 주고, AI가 찾은 더 싼 실제 제품 카드(최대 2장)를 20초 안팎에 이어서 채운다. 검색어를 고치면 링크를 다시 만든다. AI 제품 찾기는 `mock` 모드에서 쓸 수 없다고 안내한다 | `/api/shopping/similar`, `/api/shopping/find`, `/api/shopping/links` |
-| `/similar` | 비슷한 옷 보유 검사 | `/api/clothes/similar-check` |
+| `/` | 오늘. 모디가 고른 코디 보드, 점수와 고른 이유(날씨, 일정, 색 조합, 세탁), 칸을 눌러 바꿔 입기, 착용 기록과 체감 피드백 | `/api/plans/week`, `/api/outfits/evaluate`, `/api/wear-logs`, `/api/weather`, `/api/events`, `/api/clothes` |
+| `/week` | 주간. 세탁 할 일(마감 순), 7일 코디, 일정 직접 입력 | `/api/plans/week`, `/api/events*`, `/api/laundry` |
+| `/closet` | 옷장. 옷 사진 목록, 종류 필터, 옷 등록, 상태 변경, 세탁 시작 | `/api/clothes*`, `/api/laundry` |
+| `/buy` | 사기 전에. 사려는 옷 사진 한 장으로 보유 검사를 먼저 하고, 오늘 코디에 넣어 본 뒤, 더 싼 실제 제품(최대 2개)을 찾는다. 제품 찾기는 20~30초 걸려 단계별 대기 화면을 보여 주고, 쇼핑몰 5곳의 검색 링크를 함께 둔다. AI 제품 찾기는 `mock` 모드에서 쓸 수 없다고 안내한다 | `/api/clothes/similar-check`, `/api/shopping/find`, `/api/shopping/links` |
 
 ## 구조
 
@@ -48,40 +48,28 @@ src/
 │   ├── client.ts       응답 envelope 해제, 오류 문구
 │   ├── index.ts        화면에서 쓰는 API 함수 (모드 전환)
 │   └── local/          데모 데이터, 브라우저 규칙 계산
-├── components/         인형, 옷 그림, 행거, 시트
-│   └── stage3d/        3D 방, 창밖 날씨 효과, 종이인형 (three.js)
+├── components/         코디 보드, 날씨 띠, 모디 안내, 시트
 ├── hooks/queries.ts    TanStack Query 훅
 ├── pages/              화면 4개
-├── store/outfit.ts     인형에 입힌 옷 (Zustand)
+├── store/outfit.ts     오늘 보드에 올린 옷 (Zustand)
 └── styles/global.css   디자인 토큰 & 스타일
 ```
 
-옷 사진이 없는 옷은 종류와 색에 맞춘 그림(`components/Garment.tsx`)으로 보여준다. 인형에 입힌 모습은 항상 그림으로 그린다.
+## 코디 보드
 
-## 3D 옷방
+겉옷, 상의, 하의, 신발을 사진 칸으로 보여 주는 `components/OutfitBoard.tsx`를 오늘, 주간, 사기 전에 화면이 함께 쓴다. 오늘 화면에서는 칸을 누르면 그 종류의 내 옷이 시트로 올라오고, 옷을 바꾸면 `/api/outfits/evaluate`로 점수와 이유를 다시 받는다. 사기 전에 화면에서는 사려는 옷이나 찾은 제품을 해당 칸에 넣어 오늘 코디와 함께 보여 준다. 사진이 없는 옷은 대표 색 견본으로 표시한다.
 
-옷방 무대는 three.js(React Three Fiber)로 만든 방이다. 인형과 옷은 평면 그림을 종이처럼 겹겹이 세워 배치했고, 무대를 좌우로 끌면 방을 돌려 볼 수 있다. 방 안 행거에는 아래 탭에서 고른 종류의 옷이 6벌까지 걸리고, 눌러서 입힐 수 있다.
+## 화면 상태
 
-창밖은 `/api/weather`의 `current.condition` 값에 따라 달라진다.
+화면마다 불러오는 중, 비어 있음, 실패 상태를 두고 모디 캐릭터가 안내한다. AI 결과에는 출처(AI 평가 또는 규칙 평가)를 함께 적고, AI 연결이 안 되면 규칙 계산 결과임을 그대로 알린다.
 
-| 값 | 창밖 |
-|---|---|
-| `CLEAR` | 햇살이 도는 해, 바닥에 떨어지는 햇빛과 떠다니는 먼지 |
-| `CLOUDY` | 깊이가 다른 구름 9장이 서로 다른 속도로 흐름 |
-| `RAIN` | 빗줄기 260개, 유리창을 타고 내리는 빗방울 |
-| `SNOW` | 눈송이 240개, 창턱과 건물 지붕에 쌓이는 눈 |
-| `FOG` | 좌우로 느리게 오가는 안개 띠 |
-| `THUNDER` | 빗줄기 420개, 4~7초 간격의 번개 |
-
-`mock` 모드에서는 무대 오른쪽 위에서 날씨를 바꿔 볼 수 있다. 오늘 기온과 강수 확률도 함께 바뀌어 옷 평가와 주간 계획에 반영되고, 새로고침하면 실제 날씨로 돌아온다.
-
-3D 코드는 옷방에 들어올 때 따로 내려받는다(gzip 약 250KB). WebGL을 쓸 수 없는 브라우저에서는 평면 그림 무대로 바뀌고, 운영체제의 움직임 줄이기 설정이 켜져 있으면 날씨 효과가 멈춘 한 장면만 그린다.
+오늘 화면 위쪽의 날씨 띠는 `/api/weather`의 `current.condition` 값(`CLEAR`, `CLOUDY`, `RAIN`, `SNOW`, `FOG`, `THUNDER`)에 따라 하늘색과 비, 눈 움직임이 바뀐다. `mock` 모드에서는 오른쪽 위에서 날씨를 바꿔 볼 수 있고, 오늘 기온과 강수 확률도 함께 바뀌어 추천과 평가에 반영된다. 새로고침하면 실제 날씨로 돌아온다. 운영체제의 움직임 줄이기 설정이 켜져 있으면 움직임을 멈춘다.
 
 ## 아직 없는 것
 
 - 구글 캘린더 동기화(`PUT /api/events/sync`). 일정은 직접 입력만 된다
 - 옷 속성 수정(`PATCH /api/clothes/{id}`) 화면
-- 하루 추천(`POST /api/plans/day`) 화면
+- 하루 추천(`POST /api/plans/day`) 연결. 오늘 코디는 주간 계획의 첫날을 쓴다
 - 위치 기반 날씨. 지금은 서울 기준이다
 
 ## Credits / Licenses
@@ -91,11 +79,9 @@ src/
 | React, React Router | MIT | 화면 구성 |
 | TanStack Query | MIT | 서버 상태 관리 |
 | Zustand | MIT | 화면 상태 관리 |
-| three.js, React Three Fiber | MIT | 3D 옷방 |
 | clothing-dataset-small (Alexey Grigorev) | CC0 1.0 | 데모 옷장의 하의, 아우터, 신발, 스트라이프 티셔츠 사진 12장 (배경 제거 후 사용) |
 | Canva AI 이미지 생성 | AI 생성물 | 데모 옷장의 상의 사진 5장 |
-| modi 로고, 모디 캐릭터 | 팀 제작 (AI 이미지 도구 사용 시 도구명 기재 필요) | 머리말 로고, 모디 안내 |
+| modi 로고, 모디 캐릭터 | 팀 제작 (AI 이미지 도구 사용 시 도구명 기재 필요) | 오늘 화면 로고, 모디 안내 |
 | Vite | MIT | 빌드 도구 |
-| IBM Plex Sans KR (Fontsource) | OFL-1.1 | 본문 글꼴 |
-| Bagel Fat One (Fontsource) | OFL-1.1 | 제목과 숫자 글꼴 |
+| IBM Plex Sans KR (Fontsource) | OFL-1.1 | 화면 글꼴 |
 | Open-Meteo | CC BY 4.0 (데이터) | 데모 모드 날씨 조회 |
