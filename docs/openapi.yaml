@@ -807,10 +807,11 @@ components:
           items:
             type: object
             properties:
-              replaceItemId: { type: string, format: uuid }
-              withItemId: { type: string, format: uuid }
+              replaceItemId: { type: [string, 'null'], format: uuid, description: '바꿀 옷. 옷을 더하라는 제안이면 null' }
+              withItemId: { type: [string, 'null'], format: uuid, description: '대신 입을 내 옷. 옷장에 대안이 없으면 null' }
               reason: { type: string }
-        aiAvailable: { type: boolean }
+        warnings: { type: array, items: { type: string }, description: '세탁 필요·수선 중 등 입기 전에 확인할 사항' }
+        aiAvailable: { type: boolean, description: 'false 면 summary 가 규칙 템플릿 문장이다' }
 
     SimilarCheckResult:
       type: object

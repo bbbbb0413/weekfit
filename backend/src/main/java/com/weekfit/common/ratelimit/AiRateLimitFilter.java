@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * AI 를 호출하는 POST 요청을 IP 당 시간당 횟수로 제한한다. 공개 URL 로 제출하므로 API 비용 폭주를 막는다.
+ * AI 를 호출하는 요청(POST·PUT, 추천 GET)을 IP 당 시간당 횟수로 제한한다. 공개 URL 로 제출하므로 API 비용 폭주를 막는다.
  * 단일 서버 전제의 메모리 카운터이다.
  */
 @Component
@@ -29,7 +29,9 @@ public class AiRateLimitFilter extends OncePerRequestFilter {
             "/api/shopping/similar",
             "/api/outfits/evaluate",
             "/api/events/sync",
-            "/api/events");
+            "/api/events",
+            "/api/plans/week",
+            "/api/plans/day");
     private static final long WINDOW_MILLIS = 60 * 60 * 1000L;
     private static final String BODY = "{\"success\":false,\"data\":null,\"error\":\"요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.\"}";
 
@@ -44,8 +46,10 @@ public class AiRateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equalsIgnoreCase(request.getMethod()) && !"PUT".equalsIgnoreCase(request.getMethod())
-                || !AI_PATHS.contains(request.getRequestURI());
+        String method = request.getMethod();
+        boolean limitedMethod = "POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)
+                || ("GET".equalsIgnoreCase(method) && request.getRequestURI().startsWith("/api/plans/"));
+        return !limitedMethod || !AI_PATHS.contains(request.getRequestURI());
     }
 
     @Override

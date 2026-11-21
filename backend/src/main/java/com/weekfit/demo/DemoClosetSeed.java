@@ -91,7 +91,22 @@ public class DemoClosetSeed {
 
     private static Seed seed(String slug, String name, Category category, String subType, List<String> colors,
             int warmth, List<String> styles, int formality, int wears, ItemStatus status) {
-        return new Seed(slug, new ClothingSpec(name, category, subType, colors, warmth, styles, formality, null), wears, status);
+        return new Seed(slug, new ClothingSpec(name, category, subType, colors, warmth, styles, formality,
+                washThreshold(subType)), wears, status);
+    }
+
+    /** 세부 종류별 일반적인 세탁 주기. 목록에 없으면 카테고리 기본값을 쓴다. */
+    private static Integer washThreshold(String subType) {
+        return switch (subType) {
+            case "반팔티", "긴팔티" -> 1;
+            case "셔츠" -> 2;
+            case "맨투맨" -> 3;
+            case "니트", "가디건" -> 4;
+            case "슬랙스", "치노" -> 5;
+            case "청바지" -> 8;
+            case "트레이닝팬츠" -> 3;
+            default -> null;
+        };
     }
 
     private record Seed(String slug, ClothingSpec spec, int wears, ItemStatus status) {
