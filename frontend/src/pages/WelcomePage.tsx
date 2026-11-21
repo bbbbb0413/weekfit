@@ -1,4 +1,4 @@
-// 기능: 소개 화면. 로고와 모디로 서비스를 알리고 앱으로 들어가는 첫 화면
+// 기능: 소개 화면. 로고와 모디로 서비스를 알리는 화면. 오늘 화면의 로고를 누르면 열림
 
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -16,25 +16,6 @@ import logo from '../assets/modi/logo.webp';
 import { Modi, type ModiPose } from '../components/Modi';
 import { WeatherBand } from '../components/WeatherBand';
 import { EASE_OUT, ENTER, SPRING, TAP, fadeUp, list, listItem } from '../lib/motion';
-
-const VISITED_KEY = 'modi.visited';
-
-export function hasVisited(): boolean {
-  try {
-    return localStorage.getItem(VISITED_KEY) === '1';
-  } catch {
-    // 저장소를 못 쓰는 환경에서는 소개 화면을 건너뜀
-    return true;
-  }
-}
-
-function markVisited() {
-  try {
-    localStorage.setItem(VISITED_KEY, '1');
-  } catch {
-    // 저장하지 못해도 앱 사용에는 지장 없음
-  }
-}
 
 // 첫 화면에서 한 장씩 내려앉는 코디 보드
 const BOARD = [
@@ -140,10 +121,7 @@ export function WelcomePage() {
     return () => clearTimeout(timer);
   }, [screen, paused, still]);
 
-  const start = () => {
-    markVisited();
-    navigate('/');
-  };
+  const start = () => navigate('/');
 
   const current = SCREENS[screen];
 

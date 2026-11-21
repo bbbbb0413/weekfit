@@ -1,8 +1,10 @@
-// 기능: 앱 틀 & 화면 연결. 소개 화면과 앱 사이, 탭 사이를 전환 효과로 이어 줌
+// 기능: 앱 틀 & 화면 연결. 스플래시, 소개 화면, 탭 사이를 전환 효과로 이어 줌
 
 import { AnimatePresence, LazyMotion, MotionConfig, domMax, m } from 'framer-motion';
+import { useCallback, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { API_MODE } from './api';
+import { Splash, shouldShowSplash } from './components/Splash';
 import { TabBar } from './components/TabBar';
 import { Toast } from './components/Toast';
 import { ENTER } from './lib/motion';
@@ -10,7 +12,7 @@ import { BuyPage } from './pages/BuyPage';
 import { ClosetPage } from './pages/ClosetPage';
 import { TodayPage } from './pages/TodayPage';
 import { WeekPage } from './pages/WeekPage';
-import { WelcomePage, hasVisited } from './pages/WelcomePage';
+import { WelcomePage } from './pages/WelcomePage';
 
 function Screens() {
   const location = useLocation();
@@ -30,7 +32,7 @@ function Screens() {
             {/* 탭을 옮기면 새 화면이 아래에서 올라오며 나타남 */}
             <m.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={ENTER}>
               <Routes location={location}>
-                <Route path="/" element={hasVisited() ? <TodayPage /> : <Navigate to="/welcome" replace />} />
+                <Route path="/" element={<TodayPage />} />
                 <Route path="/week" element={<WeekPage />} />
                 <Route path="/closet" element={<ClosetPage />} />
                 <Route path="/buy" element={<BuyPage />} />
@@ -47,12 +49,17 @@ function Screens() {
 }
 
 export function App() {
+  const [splash, setSplash] = useState(shouldShowSplash);
+  const closeSplash = useCallback(() => setSplash(false), []);
+
   return (
     <BrowserRouter>
       {/* 필요한 기능만 불러오고, 기기의 움직임 줄이기 설정을 따름 */}
       <LazyMotion features={domMax} strict>
         <MotionConfig reducedMotion="user">
+          {/* 스플래시가 떠 있는 동안 아래에서 첫 화면이 데이터를 불러옴 */}
           <Screens />
+          <AnimatePresence>{splash && <Splash key="splash" onDone={closeSplash} />}</AnimatePresence>
         </MotionConfig>
       </LazyMotion>
     </BrowserRouter>
