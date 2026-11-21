@@ -6,6 +6,7 @@ import type { MaskPreview } from '../api/types';
 import { addDays, formatMonthDay, toLocalIso } from '../lib/date';
 import { useCreateEvent } from '../hooks/queries';
 import { Sheet } from './Sheet';
+import { Spinner } from './Skeleton';
 import { useToast } from './Toast';
 
 export function AddEventSheet({ start, onClose }: { start: string; onClose: () => void }) {
@@ -54,6 +55,7 @@ export function AddEventSheet({ start, onClose }: { start: string; onClose: () =
       onClose={onClose}
       footer={
         <button type="button" className="button button--primary button--block" disabled={!title.trim() || create.isPending} onClick={save}>
+          {create.isPending && <Spinner />}
           {create.isPending ? '추가하는 중' : '일정 추가'}
         </button>
       }

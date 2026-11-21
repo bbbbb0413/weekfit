@@ -858,10 +858,6 @@ button.board__cell:hover {
   font-size: 13px;
 }
 
-.board--loading .board__slot {
-  animation: wait 1.4s ease-in-out infinite alternate;
-}
-
 @keyframes wait {
   to {
     opacity: 0.55;
@@ -1789,6 +1785,91 @@ button.board__cell:hover {
   border-radius: 8px;
   color: #fff;
   font-size: 14px;
+}
+
+/* ---------- 뼈대 화면 & 돌림 표시 ---------- */
+
+.bone {
+  display: block;
+  max-width: 100%;
+  background: linear-gradient(90deg, #ece5dd 0%, #f6f2ed 50%, #ece5dd 100%);
+  background-size: 200% 100%;
+  animation: bone 1.4s ease-in-out infinite;
+}
+
+.bone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@keyframes bone {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.board--skeleton .board__cell {
+  gap: 6px;
+}
+
+.board--skeleton .board__picture {
+  padding: 0;
+}
+
+.reasons--skeleton {
+  margin-top: 20px;
+}
+
+.reasons--skeleton .reason {
+  align-items: center;
+}
+
+.laundry--skeleton {
+  margin-top: 14px;
+}
+
+.find-card--skeleton .find-card__main {
+  align-items: start;
+}
+
+.loading.event-line {
+  display: block;
+}
+
+.loading.form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form[hidden] {
+  display: none;
+}
+
+.spinner {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.note--busy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ---------- 스플래시 ---------- */

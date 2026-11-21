@@ -11,6 +11,7 @@ import { CountUp } from '../components/CountUp';
 import { ModiNote, ModiState, poseFor, todayLine } from '../components/ModiNote';
 import { OutfitBoard, pieceOf, type Pieces } from '../components/OutfitBoard';
 import { PickSheet } from '../components/PickSheet';
+import { BoardSkeleton, EventLineSkeleton, VerdictSkeleton } from '../components/Skeleton';
 import { WearSheet } from '../components/WearSheet';
 import { WeatherBand } from '../components/WeatherBand';
 import { AlertIcon } from '../components/icons';
@@ -119,32 +120,32 @@ export function TodayPage() {
 
       <WeatherBand date={formatMonthDay(date)} weather={current} failed={weather.isError} />
 
-      <p className="event-line">
-        {event ? (
-          <>
-            <span className="event-line__time">{formatTime(event.startsAt)}</span>
-            <span className="event-line__title">{event.title}</span>
-            <span className="event-line__tpo">{event.analysis.dressCode ?? TPO_LABEL[event.analysis.tpo]}</span>
-          </>
-        ) : (
-          <>
-            <span className="event-line__title">일정 없는 날</span>
-            <Link className="event-line__link" to="/week">
-              일정 추가
-            </Link>
-          </>
-        )}
-      </p>
+      {events.isPending ? (
+        <EventLineSkeleton />
+      ) : (
+        <p className="event-line">
+          {event ? (
+            <>
+              <span className="event-line__time">{formatTime(event.startsAt)}</span>
+              <span className="event-line__title">{event.title}</span>
+              <span className="event-line__tpo">{event.analysis.dressCode ?? TPO_LABEL[event.analysis.tpo]}</span>
+            </>
+          ) : (
+            <>
+              <span className="event-line__title">일정 없는 날</span>
+              <Link className="event-line__link" to="/week">
+                일정 추가
+              </Link>
+            </>
+          )}
+        </p>
+      )}
 
       {loading && (
         <>
           <ModiNote pose="think">옷장과 날씨, 일정을 보고 오늘 코디를 고르는 중이에요.</ModiNote>
-          <div className="board board--loading" aria-hidden="true">
-            <span className="board__slot board__slot--outer" />
-            <span className="board__slot board__slot--top" />
-            <span className="board__slot board__slot--bottom" />
-            <span className="board__slot board__slot--shoes" />
-          </div>
+          <BoardSkeleton />
+          <VerdictSkeleton />
         </>
       )}
 
@@ -192,7 +193,7 @@ export function TodayPage() {
 
           {hasBase && evaluation.isError && <p className="note note--bad">{(evaluation.error as Error).message}</p>}
 
-          {hasBase && !result && evaluation.isPending && <p className="note">점수를 계산하는 중이에요.</p>}
+          {hasBase && !result && evaluation.isPending && <VerdictSkeleton />}
 
           {hasBase && result && (
             <m.section className="verdict" aria-label="코디 평가" aria-busy={evaluation.isFetching} variants={fadeUp} initial="hidden" animate="show">

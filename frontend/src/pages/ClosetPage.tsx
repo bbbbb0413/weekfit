@@ -7,6 +7,7 @@ import { AddClothingSheet } from '../components/AddClothingSheet';
 import { ItemFigure } from '../components/ItemFigure';
 import { ItemSheet } from '../components/ItemSheet';
 import { ModiState } from '../components/ModiNote';
+import { ClosetSkeleton } from '../components/Skeleton';
 import { PlusIcon } from '../components/icons';
 import { useClothes } from '../hooks/queries';
 import { CATEGORY_LABEL, STATUS_LABEL, itemLabel } from '../lib/labels';
@@ -59,7 +60,7 @@ export function ClosetPage() {
         </button>
       </header>
 
-      {clothes.isPending && <p className="note">옷장을 여는 중이에요.</p>}
+      {clothes.isPending && <ClosetSkeleton />}
       {clothes.isError && (
         <ModiState
           pose="sorry"

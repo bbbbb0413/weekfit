@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import type { FindItem, FindResult } from '../api/types';
 import { TAP, list, listItem } from '../lib/motion';
 import { ModiState } from './ModiNote';
+import { FindCardSkeleton } from './Skeleton';
 import { CheckIcon } from './icons';
 
 export type FindState =
@@ -31,23 +32,29 @@ function FindWait() {
   }, []);
   const current = STEPS.reduce((at, [from], index) => (seconds >= from ? index : at), 0);
   return (
-    <ModiState title="더 싼 제품을 찾는 중이에요">
-      <ul className="steps" role="status">
-        {STEPS.map(([, label], index) => (
-          <m.li key={label} className={`steps__item${index === current ? ' is-now' : index < current ? ' is-done' : ''}`} animate={{ opacity: index > current ? 0.55 : 1, x: index === current ? 4 : 0 }}>
-            <span className="steps__mark" aria-hidden="true">
-              {index < current && (
-                <m.span initial={{ scale: 0 }} animate={{ scale: 1 }} style={{ display: 'grid' }}>
-                  <CheckIcon width={14} height={14} />
-                </m.span>
-              )}
-            </span>
-            {label}
-          </m.li>
-        ))}
-      </ul>
-      <p className="steps__time">{seconds}초 지났어요. 보통 20초에서 30초 걸려요.</p>
-    </ModiState>
+    <>
+      <ModiState title="더 싼 제품을 찾는 중이에요">
+        <ul className="steps" role="status">
+          {STEPS.map(([, label], index) => (
+            <m.li key={label} className={`steps__item${index === current ? ' is-now' : index < current ? ' is-done' : ''}`} animate={{ opacity: index > current ? 0.55 : 1, x: index === current ? 4 : 0 }}>
+              <span className="steps__mark" aria-hidden="true">
+                {index < current && (
+                  <m.span initial={{ scale: 0 }} animate={{ scale: 1 }} style={{ display: 'grid' }}>
+                    <CheckIcon width={14} height={14} />
+                  </m.span>
+                )}
+              </span>
+              {label}
+            </m.li>
+          ))}
+        </ul>
+        <p className="steps__time">{seconds}초 지났어요. 보통 20초에서 30초 걸려요.</p>
+      </ModiState>
+      <div className="finds__list">
+        <FindCardSkeleton />
+        <FindCardSkeleton />
+      </div>
+    </>
   );
 }
 

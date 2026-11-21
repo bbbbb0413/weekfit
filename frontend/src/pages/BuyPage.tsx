@@ -7,7 +7,9 @@ import type { Category, ClothingSuggestion, FindCategory, FindItem, MallLink, Ou
 import { FindCards, type FindState } from '../components/FindCards';
 import { ItemFigure } from '../components/ItemFigure';
 import { OutfitBoard, piecesOf, type Piece, type Pieces } from '../components/OutfitBoard';
+import { ModiNote } from '../components/ModiNote';
 import { PhotoPicker } from '../components/PhotoPicker';
+import { ResultSkeleton, Spinner } from '../components/Skeleton';
 import { useWeekPlan } from '../hooks/queries';
 import { today } from '../lib/date';
 import { CATEGORY_LABEL, SLOT_LABEL, itemLabel } from '../lib/labels';
@@ -166,11 +168,19 @@ export function BuyPage() {
         <PhotoPicker label="사려는 옷 사진 올리기" hint="쇼핑몰 상품 사진을 캡처해도 돼요. 얼굴은 나오지 않게 해 주세요" file={file} onChange={reset} />
         {!data && (
           <m.button type="button" className="button button--primary button--block" whileTap={TAP} disabled={!file || checking} onClick={compare}>
+            {checking && <Spinner />}
             {checking ? '옷장과 비교하는 중' : '내 옷장과 비교하기'}
           </m.button>
         )}
         {error && <p className="note note--bad">{error}</p>}
       </div>
+
+      {checking && (
+        <>
+          <ModiNote pose="think">사진에서 옷 종류와 색을 읽고 옷장과 비교하는 중이에요.</ModiNote>
+          <ResultSkeleton />
+        </>
+      )}
 
       {data && (
         <>

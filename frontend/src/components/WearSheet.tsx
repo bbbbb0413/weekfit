@@ -6,6 +6,7 @@ import { itemLabel } from '../lib/labels';
 import { today } from '../lib/date';
 import { useRecordWear } from '../hooks/queries';
 import { Sheet } from './Sheet';
+import { Spinner } from './Skeleton';
 import { useToast } from './Toast';
 import { useOutfit } from '../store/outfit';
 
@@ -38,6 +39,7 @@ export function WearSheet({ items, onClose }: { items: Clothing[]; onClose: () =
       onClose={onClose}
       footer={
         <button type="button" className="button button--primary button--block" disabled={record.isPending} onClick={save}>
+          {record.isPending && <Spinner />}
           {record.isPending ? '기록하는 중' : '기록하기'}
         </button>
       }

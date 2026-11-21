@@ -7,6 +7,7 @@ import { CATEGORY_LABEL, COLOR_HEX, FORMALITY_LABEL, WARMTH_LABEL } from '../lib
 import { useCreateClothing } from '../hooks/queries';
 import { PhotoPicker } from './PhotoPicker';
 import { Sheet } from './Sheet';
+import { FormSkeleton, Spinner } from './Skeleton';
 import { useToast } from './Toast';
 
 const CATEGORIES: Category[] = ['TOP', 'BOTTOM', 'OUTER', 'DRESS', 'SHOES', 'ACCESSORY'];
@@ -83,13 +84,21 @@ export function AddClothingSheet({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       footer={
         <button type="button" className="button button--primary button--block" disabled={!canSave} onClick={save}>
+          {create.isPending && <Spinner />}
           {create.isPending ? '저장하는 중' : '옷장에 걸기'}
         </button>
       }
     >
       <PhotoPicker label="옷 사진 올리기" hint="한 벌만 나오게 찍으면 더 정확해요" file={file} onChange={pick} />
 
-      {analyzing && <p className="note">사진을 읽고 있어요.</p>}
+      {analyzing && (
+        <>
+          <p className="note note--busy">
+            <Spinner /> 사진에서 종류, 색, 두께를 읽고 있어요.
+          </p>
+          <FormSkeleton />
+        </>
+      )}
       {analysis && !analysis.aiAvailable && <p className="note note--warn">AI가 사진을 읽지 못했어요. 아래 값을 직접 골라주세요.</p>}
       {analysis?.aiAvailable && analysis.suggestion.lowConfidence && (
         <p className="note note--warn">AI가 확신하지 못한 값이 있어요. 저장하기 전에 확인해 주세요.</p>
@@ -97,7 +106,7 @@ export function AddClothingSheet({ onClose }: { onClose: () => void }) {
       {analysis?.aiAvailable && !analysis.suggestion.lowConfidence && <p className="note">AI가 채운 값이에요. 틀린 곳만 고치면 돼요.</p>}
       {error && <p className="note note--bad">{error}</p>}
 
-      <div className="form">
+      <div className="form" hidden={analyzing}>
         <label className="field">
           <span className="field__label">이름</span>
           <input className="input" value={name} maxLength={100} placeholder="네이비 옥스포드 셔츠" onChange={(e) => setName(e.target.value)} />

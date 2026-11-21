@@ -4,8 +4,9 @@ import { AnimatePresence, m } from 'framer-motion';
 import { useState } from 'react';
 import type { DayPlan } from '../api/types';
 import { AddEventSheet } from '../components/AddEventSheet';
-import { ModiState } from '../components/ModiNote';
+import { ModiNote, ModiState } from '../components/ModiNote';
 import { OutfitStrip, piecesOf } from '../components/OutfitBoard';
+import { Spinner, WeekSkeleton } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { AlertIcon, PlusIcon } from '../components/icons';
 import { useClothes, useDeleteEvent, useStartLaundry, useWeekPlan } from '../hooks/queries';
@@ -89,7 +90,12 @@ export function WeekPage() {
         </button>
       </header>
 
-      {plan.isPending && <ModiState title="일주일 코디를 짜는 중이에요">일정이 중요한 날부터 옷을 배정하고, 세탁이 필요한 옷은 마르는 시간까지 거꾸로 계산해요.</ModiState>}
+      {plan.isPending && (
+        <>
+          <ModiNote pose="think">일주일 코디를 짜는 중이에요. 중요한 일정이 있는 날부터 옷을 배정해요.</ModiNote>
+          <WeekSkeleton />
+        </>
+      )}
       {plan.isError && (
         <ModiState
           pose="sorry"
@@ -134,6 +140,7 @@ export function WeekPage() {
                               .catch((e: Error) => toast(e.message))
                           }
                         >
+                          {laundry.isPending && <Spinner />}
                           세탁 시작
                         </m.button>
                       ) : (

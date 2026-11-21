@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { CurrentWeather, WeatherCondition } from '../api/types';
 import { CONDITION_LABEL } from '../lib/labels';
+import { Bone } from './Skeleton';
 
 // 화면 폭에 고르게 흩어 놓은 빗줄기 & 눈송이 위치 (가로 %, 시작 시점 차이 초)
 const DROPS: Array<[number, number]> = [
@@ -104,8 +105,13 @@ export function WeatherBand({ date, weather, failed, children }: WeatherBandProp
               {CONDITION_LABEL[weather.condition]}, 체감 {Math.round(weather.apparentTemperature)}°, 비 올 확률 {weather.precipitationProbability}%
             </span>
           </p>
+        ) : failed ? (
+          <p className="band__detail">날씨를 불러오지 못했어요. 두께는 평소 기준으로 골랐어요.</p>
         ) : (
-          <p className="band__detail">{failed ? '날씨를 불러오지 못했어요. 두께는 평소 기준으로 골랐어요.' : '날씨를 확인하는 중이에요.'}</p>
+          <p className="band__now" role="status" aria-label="날씨를 확인하는 중이에요">
+            <Bone w={56} h={32} />
+            <Bone w={170} h={14} />
+          </p>
         )}
       </div>
       {children}
