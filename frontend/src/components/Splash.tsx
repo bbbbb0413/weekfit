@@ -1,4 +1,4 @@
-// 기능: 스플래시. 앱을 열면 모디와 로고가 나타났다가 위로 걷히며 첫 화면을 보여 줌
+// 기능: 스플래시. 앱을 열거나 새로 고칠 때마다 모디와 로고가 나타났다가 위로 걷히며 첫 화면을 보여 줌
 
 import { m, useReducedMotion } from 'framer-motion';
 import { useEffect } from 'react';
@@ -6,28 +6,13 @@ import logo from '../assets/modi/logo.webp';
 import { EASE_OUT, SPRING } from '../lib/motion';
 import { Modi } from './Modi';
 
-const SEEN_KEY = 'modi.splash';
 // 모디 등장, 로고, 한 줄 소개까지 보여 주는 시간
 const SHOW_MS = 2300;
-
-// 같은 탭에서는 한 번만 보여 줌. 새로 고칠 때마다 반복되지 않도록
-export function shouldShowSplash(): boolean {
-  try {
-    return sessionStorage.getItem(SEEN_KEY) !== '1';
-  } catch {
-    return false;
-  }
-}
 
 export function Splash({ onDone }: { onDone: () => void }) {
   const still = useReducedMotion();
 
   useEffect(() => {
-    try {
-      sessionStorage.setItem(SEEN_KEY, '1');
-    } catch {
-      // 저장하지 못하면 다음에도 보여 줄 뿐 문제 없음
-    }
     const timer = setTimeout(onDone, still ? 900 : SHOW_MS);
     return () => clearTimeout(timer);
   }, [onDone, still]);

@@ -4,7 +4,7 @@ import { AnimatePresence, LazyMotion, MotionConfig, domMax, m } from 'framer-mot
 import { useCallback, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { API_MODE } from './api';
-import { Splash, shouldShowSplash } from './components/Splash';
+import { Splash } from './components/Splash';
 import { TabBar } from './components/TabBar';
 import { Toast } from './components/Toast';
 import { ENTER } from './lib/motion';
@@ -38,7 +38,7 @@ function Screens() {
 }
 
 export function App() {
-  const [splash, setSplash] = useState(shouldShowSplash);
+  const [splash, setSplash] = useState(true);
   const closeSplash = useCallback(() => setSplash(false), []);
 
   return (
