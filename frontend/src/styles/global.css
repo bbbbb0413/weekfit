@@ -376,6 +376,49 @@ a {
   background: var(--wall);
 }
 
+/* 3D 장면. 세로 스크롤은 그대로 두고 좌우 끌기로 방을 돌려 봄 */
+.stage__scene {
+  position: absolute;
+  inset: 0;
+}
+
+.stage__scene canvas {
+  display: block;
+}
+
+.stage__scene:active {
+  cursor: grabbing;
+}
+
+.stage__preview {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 1;
+}
+
+/* 평면 무대에서는 인형 머리와 겹치지 않게 창문 아래로 이동 */
+.stage:not(:has(.stage__scene)) .stage__preview {
+  top: 58%;
+  right: auto;
+  left: 16px;
+}
+
+.stage__preview select {
+  min-height: 36px;
+  padding: 0 28px 0 10px;
+  background: var(--paper)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2314213d' stroke-width='2'/%3E%3C/svg%3E")
+    no-repeat right 10px center / 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  appearance: none;
+}
+
 .stage__window {
   position: absolute;
   top: 6%;
