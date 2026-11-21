@@ -1,6 +1,6 @@
-// 기능: 오늘 날씨 띠. 하늘색과 비, 눈 움직임으로 바깥 날씨 표시
+// 기능: 오늘 날씨 띠. 하늘색과 해, 구름, 안개, 비, 눈, 번개 움직임으로 바깥 날씨 표시
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { CurrentWeather, WeatherCondition } from '../api/types';
 import { CONDITION_LABEL } from '../lib/labels';
 
@@ -10,33 +10,73 @@ const DROPS: Array<[number, number]> = [
   [64, 0.15], [72, 0.55], [79, 0.35], [87, 0.75], [94, 0.05],
 ];
 
+// 구름 위치 & 속도. 서로 다른 속도로 오른쪽에서 왼쪽으로 흐름
+const CLOUDS: CSSProperties[] = [
+  { top: 24, width: 92, animationDuration: '22s', animationDelay: '-4s' },
+  { top: 56, width: 70, opacity: 0.8, animationDuration: '30s', animationDelay: '-17s' },
+  { top: 38, width: 58, opacity: 0.65, animationDuration: '18s', animationDelay: '-11s' },
+];
+
+const FOG: CSSProperties[] = [
+  { top: 18, animationDuration: '9s' },
+  { top: 42, animationDuration: '7s', animationDelay: '-3s' },
+  { top: 66, animationDuration: '11s', animationDelay: '-6s' },
+];
+
 function Sky({ condition }: { condition: WeatherCondition }) {
-  if (condition === 'RAIN' || condition === 'THUNDER') {
-    return (
-      <>
-        {DROPS.map(([left, delay]) => (
-          <i key={left} className="band__drop" style={{ left: `${left}%`, animationDelay: `-${delay}s` }} />
-        ))}
-        {condition === 'THUNDER' && <i className="band__flash" />}
-      </>
-    );
+  switch (condition) {
+    case 'CLEAR':
+      return (
+        <>
+          <i className="band__rays" />
+          <i className="band__sun" />
+          <i className="band__cloud" style={{ top: 58, width: 64, opacity: 0.9, animationDuration: '34s', animationDelay: '-12s' }} />
+        </>
+      );
+    case 'CLOUDY':
+      return (
+        <>
+          {CLOUDS.map((style, index) => (
+            <i key={index} className="band__cloud" style={style} />
+          ))}
+        </>
+      );
+    case 'FOG':
+      return (
+        <>
+          {FOG.map((style, index) => (
+            <i key={index} className="band__fogbar" style={style} />
+          ))}
+        </>
+      );
+    case 'RAIN':
+    case 'THUNDER':
+      return (
+        <>
+          {DROPS.map(([left, delay]) => (
+            <i
+              key={left}
+              className="band__drop"
+              style={{ left: `${left}%`, animationDelay: `-${delay}s`, animationDuration: condition === 'THUNDER' ? '0.55s' : undefined }}
+            />
+          ))}
+          {condition === 'THUNDER' && (
+            <>
+              <i className="band__flash" />
+              <i className="band__bolt" />
+            </>
+          )}
+        </>
+      );
+    case 'SNOW':
+      return (
+        <>
+          {DROPS.map(([left, delay], index) => (
+            <i key={left} className="band__flake" style={{ left: `${left}%`, animationDelay: `-${delay * 6}s`, animationDuration: `${5 + (index % 4)}s` }} />
+          ))}
+        </>
+      );
   }
-  if (condition === 'SNOW') {
-    return (
-      <>
-        {DROPS.map(([left, delay], index) => (
-          <i key={left} className="band__flake" style={{ left: `${left}%`, animationDelay: `-${delay * 6}s`, animationDuration: `${5 + (index % 4)}s` }} />
-        ))}
-      </>
-    );
-  }
-  if (condition === 'CLEAR') return <i className="band__sun" />;
-  return (
-    <>
-      <i className="band__cloud band__cloud--a" />
-      <i className="band__cloud band__cloud--b" />
-    </>
-  );
 }
 
 interface WeatherBandProps {

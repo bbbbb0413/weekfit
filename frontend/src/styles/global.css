@@ -515,38 +515,65 @@ a {
 
 .band__sun {
   top: 50%;
-  right: 22px;
-  width: 46px;
-  height: 46px;
-  margin-top: -23px;
+  right: 26px;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
   border-radius: 50%;
-  background: #f7c75c;
+  background: #F7C75C;
+  animation: band-pulse 3s ease-in-out infinite alternate;
+}
+
+.band__rays {
+  top: 50%;
+  right: 8px;
+  width: 80px;
+  height: 80px;
+  margin-top: -40px;
+  box-sizing: border-box;
+  border: 4px dashed #F2B13A;
+  border-radius: 50%;
+  animation: band-spin 24s linear infinite;
 }
 
 .band__cloud {
-  height: 26px;
-  border-radius: 13px;
-  background: #fff;
-  animation: drift 9s ease-in-out infinite alternate;
+  left: 100%;
+  height: 24px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  animation: band-drift 22s linear infinite;
 }
 
-.band__cloud--a {
-  top: 18px;
-  right: 18px;
-  width: 84px;
+.band__cloud::before,
+.band__cloud::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: inherit;
 }
 
-.band__cloud--b {
-  top: 46px;
-  right: 58px;
-  width: 64px;
-  opacity: 0.75;
-  animation-duration: 12s;
+.band__cloud::before {
+  left: 14%;
+  top: -11px;
+  width: 28px;
+  height: 28px;
 }
 
-.band--fog .band__cloud {
-  width: 160px;
-  opacity: 0.7;
+.band__cloud::after {
+  left: 42%;
+  top: -17px;
+  width: 36px;
+  height: 36px;
+}
+
+.band__fogbar {
+  left: -10%;
+  width: 120%;
+  height: 14px;
+  border-radius: 7px;
+  background: #FFFFFF;
+  opacity: .75;
+  animation: band-fog 9s ease-in-out infinite alternate;
 }
 
 .band__drop {
@@ -554,9 +581,8 @@ a {
   width: 1.5px;
   height: 14px;
   border-radius: 1px;
-  background: #6d87a6;
-  transform: rotate(10deg);
-  animation: rain 0.9s linear infinite;
+  background: #6D87A6;
+  animation: band-rain .9s linear infinite;
 }
 
 .band__flake {
@@ -564,48 +590,97 @@ a {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 1px #c3d1de;
-  animation: snow 6s linear infinite;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 1px #C3D1DE;
+  animation: band-snow 6s linear infinite;
+}
+
+.band__bolt {
+  top: 10px;
+  right: 54px;
+  width: 30px;
+  height: 62px;
+  background: #F7C75C;
+  clip-path: polygon(52% 0, 6% 56%, 40% 56%, 24% 100%, 96% 38%, 58% 38%, 86% 0);
+  opacity: 0;
+  animation: band-bolt 5s linear infinite;
 }
 
 .band__flash {
   inset: 0;
-  background: #fff;
+  background: #FFFFFF;
   opacity: 0;
-  animation: flash 5s linear infinite;
+  animation: band-flash 5s linear infinite;
 }
 
-@keyframes drift {
+@keyframes band-pulse {
   to {
-    transform: translateX(-14px);
+    transform: scale(1.07);
   }
 }
 
-@keyframes rain {
+@keyframes band-spin {
   to {
-    transform: translate(-16px, 130px) rotate(10deg);
+    transform: rotate(360deg);
   }
 }
 
-@keyframes snow {
+@keyframes band-drift {
+  to {
+    transform: translateX(-640px);
+  }
+}
+
+@keyframes band-fog {
+  from {
+    transform: translateX(-22px);
+    opacity: .5;
+  }
+  to {
+    transform: translateX(22px);
+    opacity: .85;
+  }
+}
+
+@keyframes band-rain {
+  from {
+    transform: translate(0, 0) rotate(10deg);
+  }
+  to {
+    transform: translate(-18px, 140px) rotate(10deg);
+  }
+}
+
+@keyframes band-snow {
+  0% {
+    transform: translate(0, 0);
+  }
   50% {
-    transform: translate(8px, 60px);
+    transform: translate(9px, 62px);
   }
-  to {
-    transform: translate(-4px, 120px);
+  100% {
+    transform: translate(-4px, 124px);
   }
 }
 
-@keyframes flash {
-  0%,
-  92%,
-  96%,
-  100% {
+@keyframes band-bolt {
+  0%, 90%, 100% {
     opacity: 0;
   }
+  92%, 96% {
+    opacity: 1;
+  }
   94% {
-    opacity: 0.7;
+    opacity: .3;
+  }
+}
+
+@keyframes band-flash {
+  0%, 91%, 97%, 100% {
+    opacity: 0;
+  }
+  93% {
+    opacity: .65;
   }
 }
 
