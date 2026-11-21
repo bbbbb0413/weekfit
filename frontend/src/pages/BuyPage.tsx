@@ -1,4 +1,4 @@
-// 기능: 사기 전에. 사려는 옷 사진 한 장으로 보유 검사, 내 옷과 맞춰 보기, 더 싼 제품 찾기
+// 기능: 살까 말까. 사려는 옷 사진 한 장으로 보유 검사, 내 옷과 맞춰 보기, 더 싼 제품 찾기
 
 import { AnimatePresence, m } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
@@ -184,7 +184,7 @@ export function BuyPage() {
     <div className="page page--buy">
       <header className="page-head">
         <div>
-          <h1 className="page-title">사기 전에</h1>
+          <h1 className="page-title">살까 말까</h1>
           <p className="page-lead">사려는 옷 사진을 올리면 옷장에 비슷한 옷이 있는지 먼저 보고, 그래도 살 옷이면 더 싼 제품을 찾아요.</p>
         </div>
       </header>

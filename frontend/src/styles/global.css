@@ -16,7 +16,7 @@
   --bad-bg: #fce9e6;
   --bad-ink: #7a1d17;
   --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans CJK KR', system-ui, sans-serif;
-  --tabbar-h: 64px;
+  --tabbar-h: 84px;
   --column: 480px;
   --gutter: 20px;
 }
@@ -111,20 +111,31 @@ a {
   text-align: center;
 }
 
+/* 화면 위에 떠 있는 탭. 뒤 내용이 흐리게 비침 */
 .tabbar {
   position: fixed;
   left: 50%;
-  bottom: 0;
+  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  width: 100%;
-  max-width: var(--column);
-  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  width: calc(100% - 24px);
+  max-width: calc(var(--column) - 24px);
+  height: 60px;
+  padding: 5px;
   transform: translateX(-50%);
-  background: var(--paper);
-  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 6px 20px rgba(59, 48, 45, 0.1);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabbar {
+    background: var(--paper);
+  }
 }
 
 .tabbar__item {
@@ -133,10 +144,15 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
+  border-radius: 17px;
   color: var(--ink-2);
   font-size: 11px;
   text-decoration: none;
+}
+
+.tabbar__item > span:not(.tabbar__mark) {
+  position: relative;
 }
 
 .tabbar__item.is-active {
@@ -144,12 +160,13 @@ a {
   font-weight: 600;
 }
 
+/* 지금 있는 탭 뒤의 면 */
 .tabbar__mark {
   position: absolute;
-  top: -1px;
-  width: 32px;
-  height: 2px;
-  background: var(--accent);
+  inset: 0;
+  background: var(--peach);
+  border-radius: 17px;
+  opacity: 0.6;
 }
 
 .tabbar__icon {
@@ -1003,10 +1020,12 @@ button.board__cell:hover {
 
 .actions {
   position: sticky;
-  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  bottom: 0;
   z-index: 10;
   margin-top: 20px;
-  padding: 12px var(--gutter);
+  /* 떠 있는 탭 아래까지 흰 면을 이어 줌 */
+  margin-bottom: calc(-24px - var(--tabbar-h) - env(safe-area-inset-bottom));
+  padding: 12px var(--gutter) calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   background: var(--paper);
   border-top: 1px solid var(--line);
 }
@@ -1309,7 +1328,7 @@ button.board__cell:hover {
   padding: 14px var(--gutter) 0;
 }
 
-/* ---------- 사기 전에 ---------- */
+/* ---------- 살까 말까 ---------- */
 
 .tool {
   display: grid;
