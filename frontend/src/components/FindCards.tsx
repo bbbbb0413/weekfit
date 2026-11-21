@@ -1,6 +1,9 @@
-// 기능: AI가 찾은 더 싼 제품 카드. 로딩, 결과 없음, 실패 상태를 함께 그린다
+// 기능: AI가 찾은 더 싼 제품. 대기 단계, 결과 카드, 실패 안내
 
+import { useEffect, useState } from 'react';
 import type { FindItem, FindResult } from '../api/types';
+import { ModiState } from './ModiNote';
+import { CheckIcon } from './icons';
 
 export type FindState =
   | { kind: 'idle' }
@@ -11,89 +14,123 @@ export type FindState =
 
 const won = new Intl.NumberFormat('ko-KR');
 
-// 23.9만 같은 짧은 가격 표기
-function shortPrice(price: number): string {
-  if (price >= 10_000) return `${Math.round(price / 1_000) / 10}만`;
-  return `${won.format(price)}원`;
-}
+// 서버 작업 순서에 맞춘 대기 단계. 시작 시각은 평균 소요 시간 기준
+const STEPS: Array<[number, string]> = [
+  [0, '사진에서 옷 특징 읽는 중'],
+  [6, '쇼핑몰에서 비슷한 제품 검색하는 중'],
+  [16, '가격과 판매 여부 확인하는 중'],
+];
 
-export function FindCards({ state }: { state: Exclude<FindState, { kind: 'idle' }> }) {
+function FindWait() {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const current = STEPS.reduce((at, [from], index) => (seconds >= from ? index : at), 0);
   return (
-    <section className="result finds" aria-label="AI가 찾은 제품" aria-busy={state.kind === 'loading'}>
-      <h2 className="result__title">AI가 찾은 더 싼 제품</h2>
-      <FindBody state={state} />
-    </section>
+    <ModiState title="더 싼 제품을 찾는 중이에요">
+      <ul className="steps" role="status">
+        {STEPS.map(([, label], index) => (
+          <li key={label} className={`steps__item${index === current ? ' is-now' : index < current ? ' is-done' : ''}`}>
+            <span className="steps__mark" aria-hidden="true">
+              {index < current && <CheckIcon width={14} height={14} />}
+            </span>
+            {label}
+          </li>
+        ))}
+      </ul>
+      <p className="steps__time">{seconds}초 지났어요. 보통 20초에서 30초 걸려요.</p>
+    </ModiState>
   );
 }
 
-function FindBody({ state }: { state: Exclude<FindState, { kind: 'idle' }> }) {
-  if (state.kind === 'loading') {
-    return (
-      <div className="finds__loading" role="status">
-        <span className="finds__bar" aria-hidden="true" />
-        <p>쇼핑몰을 검색하고 가격을 비교하는 중이에요. 20초쯤 걸려요. 그동안 아래 쇼핑몰 링크를 먼저 볼 수 있어요.</p>
-      </div>
-    );
-  }
+interface FindCardsProps {
+  state: Exclude<FindState, { kind: 'idle' }>;
+  selectedUrl: string | null;
+  onSelect: (item: FindItem) => void;
+}
+
+export function FindCards({ state, selectedUrl, onSelect }: FindCardsProps) {
+  if (state.kind === 'loading') return <FindWait />;
   if (state.kind === 'unavailable') {
-    return <p className="note note--warn">데모 모드에서는 AI 제품 찾기를 쓸 수 없어요. 서버에 연결하면 실제 제품을 찾아 드려요.</p>;
+    return <p className="note note--warn">데모 모드에서는 AI 제품 찾기를 쓸 수 없어요. 서버에 연결하면 실제 판매 중인 제품을 찾아 드려요.</p>;
   }
   if (state.kind === 'error') {
-    return <p className="note note--bad">{state.message}</p>;
+    return (
+      <ModiState title="제품을 찾지 못했어요">
+        {state.message} 아래 쇼핑몰 검색으로 직접 찾아볼 수 있어요.
+      </ModiState>
+    );
   }
   const { result } = state;
   const originalPrice = result.original?.price ?? null;
   return (
-    <>
+    <div className="finds">
       {result.analysis && <p className="finds__analysis">{result.analysis}</p>}
+      {result.original?.name && originalPrice !== null && (
+        <p className="finds__original">
+          올린 옷으로 본 제품: {result.original.name}, {won.format(originalPrice)}원
+        </p>
+      )}
       {result.items.length > 0 && (
         <ul className="finds__list">
           {result.items.map((item) => (
-            <FindCard key={item.url} item={item} originalPrice={originalPrice} />
+            <FindCard key={item.url} item={item} originalPrice={originalPrice} selected={item.url === selectedUrl} onSelect={() => onSelect(item)} />
           ))}
         </ul>
       )}
+      {result.items.length === 0 && result.warnings.length === 0 && <p className="note">조건에 맞는 더 싼 제품을 찾지 못했어요. 아래 쇼핑몰 검색으로 직접 찾아볼 수 있어요.</p>}
       {result.warnings.map((warning) => (
         <p key={warning} className={result.items.length > 0 ? 'note' : 'note note--warn'}>
           {warning}
         </p>
       ))}
-    </>
+      <p className="source-line">{result.aiAvailable ? 'AI가 웹에서 찾은 결과예요. 가격은 검색 시점 기준이라 상품 페이지에서 다시 확인해 주세요.' : 'AI 연결이 안 돼서 쇼핑몰 검색 링크로 대신했어요.'}</p>
+    </div>
   );
 }
 
-function FindCard({ item, originalPrice }: { item: FindItem; originalPrice: number | null }) {
+function FindCard({ item, originalPrice, selected, onSelect }: { item: FindItem; originalPrice: number | null; selected: boolean; onSelect: () => void }) {
+  const saved = originalPrice !== null && originalPrice > item.price ? originalPrice - item.price : null;
+  const body = (
+    <>
+      <span className="find-card__thumb">
+        {item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span aria-hidden="true">{item.mall}</span>}
+      </span>
+      <span className="find-card__body">
+        <span className="find-card__mall">{item.mall}</span>
+        <span className="find-card__name">{item.name}</span>
+        <span className="find-card__price">
+          {won.format(item.price)}원{saved !== null && <em className="find-card__saved">{won.format(saved)}원 저렴</em>}
+        </span>
+        <span className="find-card__reason">{item.reason}</span>
+      </span>
+    </>
+  );
   return (
-    <li className="find-card">
-      <div className="find-card__thumb">
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt="" width={88} height={88} loading="lazy" referrerPolicy="no-referrer" />
-        ) : (
-          <span aria-hidden="true">{item.mall}</span>
-        )}
-      </div>
-      <div className="find-card__body">
-        <p className="find-card__mall">{item.mall}</p>
-        <p className="find-card__name">{item.name}</p>
-        <p className="find-card__price">
-          {won.format(item.price)}원
-          {originalPrice !== null && originalPrice > item.price && (
-            <span className="find-card__compare">
-              원본 {shortPrice(originalPrice)} → {shortPrice(item.price)}
-            </span>
-          )}
-        </p>
-        <p className="find-card__reason">{item.reason}</p>
-        {item.size && (
+    <li className={`find-card${selected ? ' is-on' : ''}`}>
+      {/* 사진이 있는 제품만 보드에 넣어 볼 수 있음 */}
+      {item.imageUrl ? (
+        <button type="button" className="find-card__main" aria-pressed={selected} onClick={onSelect}>
+          {body}
+        </button>
+      ) : (
+        <div className="find-card__main">{body}</div>
+      )}
+      <div className="find-card__foot">
+        {item.size ? (
           <details className="find-card__more">
-            <summary>자세히보기</summary>
-            <p>{item.size} 사이즈(추천)</p>
+            <summary>자세히 보기</summary>
+            <p>추천 사이즈 {item.size}</p>
           </details>
+        ) : (
+          <span />
         )}
+        <a className="button button--small" href={item.url} target="_blank" rel="noreferrer">
+          상품 페이지 열기
+        </a>
       </div>
-      <a className="button button--small find-card__link" href={item.url} target="_blank" rel="noreferrer">
-        상품 보기
-      </a>
     </li>
   );
 }

@@ -4,8 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { API_MODE } from './api';
 import { TabBar } from './components/TabBar';
 import { Toast } from './components/Toast';
-import { ShopPage } from './pages/ShopPage';
-import { SimilarPage } from './pages/SimilarPage';
+import { BuyPage } from './pages/BuyPage';
 import { TodayPage } from './pages/TodayPage';
 import { WeekPage } from './pages/WeekPage';
 
@@ -18,8 +17,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<TodayPage />} />
             <Route path="/week" element={<WeekPage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/similar" element={<SimilarPage />} />
+            <Route path="/buy" element={<BuyPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
