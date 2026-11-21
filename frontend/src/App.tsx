@@ -5,6 +5,7 @@ import { API_MODE } from './api';
 import { TabBar } from './components/TabBar';
 import { Toast } from './components/Toast';
 import { BuyPage } from './pages/BuyPage';
+import { ClosetPage } from './pages/ClosetPage';
 import { TodayPage } from './pages/TodayPage';
 import { WeekPage } from './pages/WeekPage';
 
@@ -17,6 +18,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<TodayPage />} />
             <Route path="/week" element={<WeekPage />} />
+            <Route path="/closet" element={<ClosetPage />} />
             <Route path="/buy" element={<BuyPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

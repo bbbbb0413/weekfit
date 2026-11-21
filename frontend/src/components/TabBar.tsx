@@ -1,11 +1,12 @@
 // 기능: 하단 탭
 
 import { NavLink } from 'react-router-dom';
-import { CalendarIcon, TagIcon, TeeIcon } from './icons';
+import { CalendarIcon, HangerIcon, TagIcon, TeeIcon } from './icons';
 
 const TABS = [
   { to: '/', label: '오늘', icon: TeeIcon, end: true },
   { to: '/week', label: '주간', icon: CalendarIcon, end: false },
+  { to: '/closet', label: '옷장', icon: HangerIcon, end: false },
   { to: '/buy', label: '사기 전에', icon: TagIcon, end: false },
 ];
 
