@@ -14,7 +14,7 @@
 | 배경(기후 반영) | 현재 날씨에 따라 배경이 바뀐다 | 날씨 조회와 `condition`(CLEAR·CLOUDY·RAIN·SNOW·FOG·THUNDER) 제공 |
 | 옷 평가 | 캐릭터에 입힌 조합을 평가한다 | 날씨 적합도·일정(TPO) 적합도·색 조합·세탁 상태 점수와 교체 제안 |
 | 캘린더 기반 옷 추천 | 일주일 일정과 예보로 코디를 계획한다 | 일정 마스킹·분석, 주간 배정, 세탁 역산 |
-| 사진 넣어서 가성비 옷 찾기 | 사진 속 옷과 비슷한 상품을 여러 쇼핑몰에서 찾는다 | 사진 분석 → 검색어 생성 → 네이버 쇼핑 검색 → 쇼핑몰별 최저가 정리 |
+| 사진 넣어서 가성비 옷 찾기 | 사진 속 옷과 비슷한 상품을 여러 쇼핑몰에서 찾는다 | 사진 분석 → 검색어 생성 → 쇼핑몰 5곳의 검색 링크 생성(전문몰 4곳 낮은 가격순, 11번가 인기순) |
 | 비슷한 옷 보유 검사 | 사려는 옷과 비슷한 옷이 옷장에 있는지 확인한다 | 사진 분석 → 옷장 속성 비교 → 중복·유사·신규 판정, 함께 입을 수 있는 옷 수 |
 
 **가정**: "옷 평가"는 캐릭터에 입힌 조합을 그날 날씨와 일정 기준으로 평가하는 기능으로 해석했다. 다른 의미라면 4장의 평가 API만 바꾸면 된다.
@@ -31,7 +31,7 @@ com.weekfit
 ├── weather   Open-Meteo 조회, 날씨 코드 변환, 보온 기준
 ├── schedule  일정 저장, 개인정보 마스킹, 일정 분석(AI + 규칙 대체)
 ├── plan      주간 추천, 세탁 역산, 하루 추천, 옷 평가
-├── shopping  네이버 쇼핑 검색, 가성비 정리
+├── shopping  쇼핑몰별 낮은 가격순 검색 링크 생성
 └── demo      심사용 데모 데이터 시드
 ```
 
@@ -99,9 +99,12 @@ com.weekfit
 | POST | `/api/outfits/evaluate` | `{ itemIds, date?, eventId?, tpo?, lat?, lon? }` 입힌 조합 평가 |
 
 ### 쇼핑
+
+네이버 쇼핑 검색 API가 2026-07-31에 종료되어 상품 데이터를 직접 받지 않고 쇼핑몰 검색 링크를 만든다. 정렬 주소는 2026-11-21에 각 쇼핑몰 화면에서 확인했다.
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/api/shopping/similar` | multipart `image`, `maxPrice?`. 비슷한 상품을 쇼핑몰별 최저가로 정리 |
+| POST | `/api/shopping/similar` | multipart `image`. 검색어와 쇼핑몰별 낮은 가격순 검색 링크를 돌려준다 |
+| GET | `/api/shopping/links?query=` | 고친 검색어로 링크만 다시 만든다. AI를 호출하지 않는다 |
 
 ## 5. 데이터 모델
 
@@ -130,4 +133,3 @@ LLM 제공사는 `AI_PROVIDER` 로 고른다. 기본값은 `anthropic`(Claude)�
 | `ANTHROPIC_API_KEY` | Claude 호출(기본) | Claude Console. Max 플랜 월 $100 API 크레딧 사용 |
 | `OPENAI_API_KEY` | GPT 호출(대체) | OpenAI Platform |
 | `GEMINI_API_KEY` | Gemini 호출(대체) | Google AI Studio |
-| `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | 쇼핑 검색 | 네이버 개발자센터(검색 API, 무료 일 25,000회) |

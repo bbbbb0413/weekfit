@@ -40,10 +40,6 @@ management:
         include: health
 
 weekfit:
-  shopping:
-    naver:
-      client-id: ${NAVER_CLIENT_ID:}
-      client-secret: ${NAVER_CLIENT_SECRET:}
   demo:
     seed: ${DEMO_SEED:true}
   rate-limit:
