@@ -812,6 +812,140 @@ a {
   border-top: 1px solid var(--line);
 }
 
+/* 평가 */
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--paper);
+  border-radius: 16px;
+  box-shadow: var(--paper-shadow);
+}
+
+.score__number {
+  flex: none;
+  min-width: 92px;
+  padding: 0 4px;
+  background: linear-gradient(transparent 58%, var(--tape) 58% 92%, transparent 92%);
+  font-family: var(--font-display);
+  font-size: 64px;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.score--fair .score__number {
+  background: linear-gradient(transparent 58%, #ffdf9e 58% 92%, transparent 92%);
+}
+
+.score--poor .score__number {
+  background: linear-gradient(transparent 58%, #f9c5bf 58% 92%, transparent 92%);
+}
+
+.score__grade {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.score__basis {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.checks {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  border-radius: 16px;
+  box-shadow: var(--paper-shadow);
+  list-style: none;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.check + .check {
+  border-top: 1px solid var(--line);
+}
+
+.check__mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.check.is-ok .check__mark {
+  background: var(--good-bg);
+  color: var(--good);
+}
+
+.check.is-off .check__mark {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.check__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.check__message {
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.check__score {
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.swaps ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.swap {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.swap + .swap {
+  border-top: 1px dashed var(--edge);
+}
+
+.swap__pair {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.swap__item {
+  display: block;
+  width: 42px;
+  height: 52px;
+}
+
+.swap__text {
+  font-size: 14px;
+}
+
+.swap__reason {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
 /* 옷 정보 */
 
 .item-detail {
