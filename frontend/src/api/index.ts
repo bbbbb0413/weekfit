@@ -29,13 +29,13 @@ import { addDays, dateOfIso, today } from '../lib/date';
 
 const mock = API_MODE === 'mock';
 
-// 백엔드에 아직 없는 엔드포인트면 대체 계산으로 전환
-async function orLocal<T>(remote: () => Promise<T>, local: () => T | Promise<T>): Promise<T> {
+// 백엔드에 아직 없는 엔드포인트면 대체 계산으로 전환. busyToo 를 주면 요청 한도 초과(429) & 일시 장애(503)에도 전환
+async function orLocal<T>(remote: () => Promise<T>, local: () => T | Promise<T>, busyToo = false): Promise<T> {
   if (mock) return local();
   try {
     return await remote();
   } catch (error) {
-    if (error instanceof ApiError && error.notReady) return local();
+    if (error instanceof ApiError && (error.notReady || (busyToo && (error.status === 429 || error.status === 503)))) return local();
     throw error;
   }
 }
@@ -148,6 +148,8 @@ export const api = {
           warmthBias: mock ? localStore.warmthBias() : 0,
         });
       },
+      // 옷을 바꿀 때마다 호출하므로 한도를 넘으면 규칙 평가로 이어 감 (화면에 규칙 평가로 표시)
+      true,
     ),
 
   // ---------- 사진 기능 (AI 필요) ----------
