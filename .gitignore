@@ -5,3 +5,6 @@
 .idea/
 .vscode/
 *.log
+
+# 개인 작업 명세
+CLD_*.md
