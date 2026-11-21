@@ -1,5 +1,6 @@
 // 기능: 옷장. 내 옷 사진 목록, 종류 필터, 상태 관리, 옷 등록
 
+import { AnimatePresence, m } from 'framer-motion';
 import { useState } from 'react';
 import type { Category, Clothing } from '../api/types';
 import { AddClothingSheet } from '../components/AddClothingSheet';
@@ -9,6 +10,7 @@ import { ModiState } from '../components/ModiNote';
 import { PlusIcon } from '../components/icons';
 import { useClothes } from '../hooks/queries';
 import { CATEGORY_LABEL, STATUS_LABEL, itemLabel } from '../lib/labels';
+import { QUICK, SNAPPY, TAP } from '../lib/motion';
 
 type Filter = 'ALL' | 'WASH' | Category;
 
@@ -90,39 +92,46 @@ export function ClosetPage() {
         <>
           <div className="filters" role="group" aria-label="옷 종류">
             {filters.map(([value, label]) => (
-              <button
+              <m.button
                 key={value}
                 type="button"
+                whileTap={TAP}
                 className={`filter${active === value ? ' is-on' : ''}`}
                 aria-pressed={active === value}
                 onClick={() => setFilter(value)}
               >
-                {label}
-              </button>
+                {active === value && <m.span className="filter__on" layoutId="filter-on" transition={SNAPPY} />}
+                <span className="filter__label">{label}</span>
+              </m.button>
             ))}
           </div>
 
           <ul className="closet">
-            {shown.map((item) => {
-              const state = stateOf(item);
-              return (
-                <li key={item.id}>
-                  <button type="button" className={`garment${item.status !== 'AVAILABLE' ? ' is-away' : ''}`} onClick={() => setManagingId(item.id)}>
+            {/* 필터를 바꾸면 남는 옷은 자리를 옮기고, 빠지는 옷은 작아지며 사라짐 */}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {shown.map((item) => {
+                const state = stateOf(item);
+                return (
+                  <m.li key={item.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={QUICK}>
+                    <m.button type="button" whileTap={TAP} className={`garment${item.status !== 'AVAILABLE' ? ' is-away' : ''}`} onClick={() => setManagingId(item.id)}>
                     <span className="garment__picture">
                       <ItemFigure item={item} />
                     </span>
                     <span className="garment__name">{itemLabel(item)}</span>
-                    <span className="garment__state">{state ?? `${item.wearsSinceWash}번 입음`}</span>
-                  </button>
-                </li>
-              );
-            })}
+                      <span className="garment__state">{state ?? `${item.wearsSinceWash}번 입음`}</span>
+                    </m.button>
+                  </m.li>
+                );
+              })}
+            </AnimatePresence>
           </ul>
         </>
       )}
 
-      {managing && <ItemSheet item={managing} onClose={() => setManagingId(null)} />}
-      {adding && <AddClothingSheet onClose={() => setAdding(false)} />}
+      <AnimatePresence>
+        {managing && <ItemSheet key="item" item={managing} onClose={() => setManagingId(null)} />}
+        {adding && <AddClothingSheet key="add" onClose={() => setAdding(false)} />}
+      </AnimatePresence>
     </div>
   );
 }

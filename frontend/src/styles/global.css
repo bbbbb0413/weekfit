@@ -144,13 +144,16 @@ a {
   font-weight: 600;
 }
 
-.tabbar__item.is-active::before {
-  content: '';
+.tabbar__mark {
   position: absolute;
   top: -1px;
   width: 32px;
   height: 2px;
   background: var(--accent);
+}
+
+.tabbar__icon {
+  display: grid;
 }
 
 /* ---------- 공통 요소 ---------- */
@@ -372,6 +375,10 @@ a {
 .modi-note__line {
   font-size: 14px;
   line-height: 1.45;
+}
+
+.modi-note__text {
+  display: block;
 }
 
 .modi-note__name {
@@ -981,6 +988,7 @@ button.board__cell:hover {
 }
 
 .filter {
+  position: relative;
   flex: none;
   min-height: 40px;
   padding: 0 12px;
@@ -991,9 +999,20 @@ button.board__cell:hover {
 }
 
 .filter.is-on {
-  background: var(--peach-soft);
-  border-color: var(--accent);
   font-weight: 600;
+}
+
+/* 고른 필터 표시. 필터를 바꾸면 이 면이 옮겨 감 */
+.filter__on {
+  position: absolute;
+  inset: -1px;
+  background: var(--peach-soft);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+
+.filter__label {
+  position: relative;
 }
 
 .closet {
@@ -1551,14 +1570,6 @@ button.board__cell:hover {
   background: var(--paper);
   border-radius: 14px 14px 0 0;
   outline: none;
-  animation: sheet-up 0.2s ease-out;
-}
-
-@keyframes sheet-up {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
 }
 
 .sheet__header {

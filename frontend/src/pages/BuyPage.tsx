@@ -1,5 +1,6 @@
 // 기능: 사기 전에. 사려는 옷 사진 한 장으로 보유 검사, 내 옷과 맞춰 보기, 더 싼 제품 찾기
 
+import { m } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import type { Category, ClothingSuggestion, FindCategory, FindItem, MallLink, OutfitSlot, SimilarCheckResult, Sourced } from '../api/types';
@@ -10,6 +11,7 @@ import { PhotoPicker } from '../components/PhotoPicker';
 import { useWeekPlan } from '../hooks/queries';
 import { today } from '../lib/date';
 import { CATEGORY_LABEL, SLOT_LABEL, itemLabel } from '../lib/labels';
+import { TAP, fadeUp, list, listItem } from '../lib/motion';
 
 const MAX_QUERY = 50;
 
@@ -163,63 +165,63 @@ export function BuyPage() {
       <div className="tool">
         <PhotoPicker label="사려는 옷 사진 올리기" hint="쇼핑몰 상품 사진을 캡처해도 돼요. 얼굴은 나오지 않게 해 주세요" file={file} onChange={reset} />
         {!data && (
-          <button type="button" className="button button--primary button--block" disabled={!file || checking} onClick={compare}>
+          <m.button type="button" className="button button--primary button--block" whileTap={TAP} disabled={!file || checking} onClick={compare}>
             {checking ? '옷장과 비교하는 중' : '내 옷장과 비교하기'}
-          </button>
+          </m.button>
         )}
         {error && <p className="note note--bad">{error}</p>}
       </div>
 
       {data && (
         <>
-          <section className="block" aria-label="보유 검사 결과">
+          <m.section className="block" aria-label="보유 검사 결과" variants={fadeUp} initial="hidden" animate="show">
             {check.source === 'local' && <p className="note note--warn">데모 모드라 사진을 분석하지 않은 예시 결과예요. 서버에 연결하면 올린 사진으로 비교해요.</p>}
             <h2 className="result-title">{VERDICT[data.verdict]}</h2>
             <p className="summary">{data.comment}</p>
             {data.matches.length > 0 && (
-              <ul className="matches">
-                {data.matches.map((m) => (
-                  <li key={m.item.id} className="match">
+              <m.ul className="matches" variants={list} initial="hidden" animate="show">
+                {data.matches.map((match) => (
+                  <m.li key={match.item.id} className="match" variants={listItem}>
                     <span className="match__picture">
-                      <ItemFigure item={m.item} />
+                      <ItemFigure item={match.item} />
                     </span>
                     <span className="match__text">
-                      <span className="match__name">{itemLabel(m.item)}</span>
-                      <span className="match__reasons">{m.reasons.join(', ')}</span>
+                      <span className="match__name">{itemLabel(match.item)}</span>
+                      <span className="match__reasons">{match.reasons.join(', ')}</span>
                     </span>
-                    <span className="match__score" aria-label={`유사도 ${Math.round(m.similarity * 100)}퍼센트`}>
-                      {Math.round(m.similarity * 100)}%
+                    <span className="match__score" aria-label={`유사도 ${Math.round(match.similarity * 100)}퍼센트`}>
+                      {Math.round(match.similarity * 100)}%
                     </span>
-                  </li>
+                  </m.li>
                 ))}
-              </ul>
+              </m.ul>
             )}
-          </section>
+          </m.section>
 
           {board && (
-            <section className="block" aria-label="내 옷과 맞춰 보기">
+            <m.section className="block" aria-label="내 옷과 맞춰 보기" variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.08 }}>
               <h2 className="section-title">오늘 코디에 넣어 보면</h2>
               <OutfitBoard pieces={board.pieces} />
               <p className="summary">
                 함께 입을 수 있는 내 옷이 <strong>{data.pairableCount}벌</strong> 있어요.
               </p>
-            </section>
+            </m.section>
           )}
 
-          <section className="block" aria-label="더 싼 제품">
+          <m.section className="block" aria-label="더 싼 제품" variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.16 }}>
             <h2 className="section-title">그래도 산다면</h2>
             {find.kind === 'idle' ? (
-              <button type="button" className="button button--primary button--block" onClick={startFind}>
+              <m.button type="button" className="button button--primary button--block" whileTap={TAP} onClick={startFind}>
                 더 싼 제품 찾기
-              </button>
+              </m.button>
             ) : (
               <FindCards state={find} selectedUrl={chosen?.url ?? null} onSelect={(item) => setChosen((current) => (current?.url === item.url ? null : item))} />
             )}
             {find.kind === 'done' && find.result.items.some((item) => item.imageUrl) && board && <p className="hint">제품을 누르면 위 보드의 {SLOT_LABEL[board.slot]} 칸에 넣어 볼 수 있어요.</p>}
-          </section>
+          </m.section>
 
           {(links.length > 0 || linkError) && (
-            <section className="block" aria-label="쇼핑몰 검색">
+            <m.section className="block" aria-label="쇼핑몰 검색" variants={fadeUp} initial="hidden" animate="show">
               <h2 className="section-title">쇼핑몰에서 직접 찾기</h2>
               <form className="requery" onSubmit={refine}>
                 <label className="field">
@@ -244,7 +246,7 @@ export function BuyPage() {
                   </li>
                 ))}
               </ul>
-            </section>
+            </m.section>
           )}
         </>
       )}

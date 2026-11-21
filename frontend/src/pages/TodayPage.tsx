@@ -1,11 +1,13 @@
 // 기능: 오늘 화면. 모디가 고른 코디 보드, 고른 이유, 바꿔 입기, 착용 기록
 
+import { AnimatePresence, m } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { API_MODE, api } from '../api';
 import type { CalendarEvent, Clothing, OutfitEvaluation, OutfitSlot, WeatherCondition } from '../api/types';
 import logo from '../assets/modi/logo.webp';
+import { CountUp } from '../components/CountUp';
 import { ModiNote, ModiState, poseFor, todayLine } from '../components/ModiNote';
 import { OutfitBoard, pieceOf, type Pieces } from '../components/OutfitBoard';
 import { PickSheet } from '../components/PickSheet';
@@ -15,6 +17,7 @@ import { AlertIcon } from '../components/icons';
 import { useClothes, useEvaluation, useEvents, useWeather, useWeekPlan } from '../hooks/queries';
 import { formatMonthDay, formatTime, today } from '../lib/date';
 import { CONDITION_LABEL, TPO_LABEL, itemLabel, slotOf } from '../lib/labels';
+import { TAP, fadeUp, list, listItem } from '../lib/motion';
 import { useOutfit, wornIds } from '../store/outfit';
 
 const PREVIEW_ORDER: WeatherCondition[] = ['CLEAR', 'CLOUDY', 'RAIN', 'SNOW', 'FOG', 'THUNDER'];
@@ -192,10 +195,13 @@ export function TodayPage() {
           {hasBase && !result && evaluation.isPending && <p className="note">점수를 계산하는 중이에요.</p>}
 
           {hasBase && result && (
-            <section className="verdict" aria-label="코디 평가" aria-busy={evaluation.isFetching}>
+            <m.section className="verdict" aria-label="코디 평가" aria-busy={evaluation.isFetching} variants={fadeUp} initial="hidden" animate="show">
               <div className="verdict__head">
                 <p className="verdict__score">
-                  <strong>{result.score}</strong>점
+                  <strong>
+                    <CountUp value={result.score} />
+                  </strong>
+                  점
                 </p>
                 <p className="verdict__grade">{GRADE_LABEL[result.grade]}</p>
                 <p className="verdict__source">{result.aiAvailable ? 'AI 평가' : '규칙 평가'}</p>
@@ -203,26 +209,26 @@ export function TodayPage() {
               <p className="verdict__summary">{custom || !day?.reason ? result.summary : day.reason}</p>
 
               <h2 className="section-title">고른 이유</h2>
-              <dl className="reasons">
+              <m.dl className="reasons" variants={list} initial="hidden" animate="show">
                 {CHECKS.map(([key, label]) => {
                   const check = result.checks[key];
                   return (
-                    <div key={key} className={`reason${check.ok ? '' : ' is-off'}`}>
+                    <m.div key={key} className={`reason${check.ok ? '' : ' is-off'}`} variants={listItem}>
                       <dt>{label}</dt>
                       <dd>{check.message}</dd>
                       <dd className="reason__score" aria-label={`${check.score}점`}>
                         {check.score}
                       </dd>
-                    </div>
+                    </m.div>
                   );
                 })}
                 {!custom && day?.layeringTip && (
-                  <div className="reason">
+                  <m.div className="reason" variants={listItem}>
                     <dt>시간대</dt>
                     <dd>{day.layeringTip}</dd>
-                  </div>
+                  </m.div>
                 )}
-              </dl>
+              </m.dl>
 
               {[...(result.warnings ?? []), ...(custom ? [] : (day?.warnings ?? []))].map((warning) => (
                 <p key={warning} className="caution">
@@ -238,7 +244,7 @@ export function TodayPage() {
                       const from = byId(s.replaceItemId);
                       const to = byId(s.withItemId);
                       return (
-                        <li key={index} className="swap">
+                        <m.li key={`${s.replaceItemId}-${s.withItemId}-${index}`} className="swap" variants={fadeUp} initial="hidden" animate="show">
                           <div className="swap__text">
                             {to && (
                               <p className="swap__title">
@@ -248,20 +254,20 @@ export function TodayPage() {
                             <p className="swap__reason">{s.reason}</p>
                           </div>
                           {to && (
-                            <button type="button" className="button button--small" onClick={() => put(to)}>
+                            <m.button type="button" className="button button--small" whileTap={TAP} onClick={() => put(to)}>
                               {from ? '바꿔 입기' : '더해 입기'}
-                            </button>
+                            </m.button>
                           )}
-                        </li>
+                        </m.li>
                       );
                     })}
                   </ul>
                 </>
               )}
-            </section>
+            </m.section>
           )}
 
-          <div className="actions">
+          <m.div className="actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15, duration: 0.3 }}>
             {done ? (
               <p className="actions__done">
                 오늘 입은 옷으로 기록했어요.
@@ -270,25 +276,28 @@ export function TodayPage() {
                 </button>
               </p>
             ) : (
-              <button type="button" className="button button--primary button--block" disabled={!hasBase} onClick={() => setRecording(true)}>
+              <m.button type="button" className="button button--primary button--block" whileTap={TAP} disabled={!hasBase} onClick={() => setRecording(true)}>
                 오늘 이 옷 입기
-              </button>
+              </m.button>
             )}
-          </div>
+          </m.div>
         </>
       )}
 
-      {picking && (
-        <PickSheet
-          slot={picking}
-          closet={closet}
-          currentId={worn[picking]}
-          onPick={pick}
-          onRemove={() => (remove(picking), setPicking(null))}
-          onClose={() => setPicking(null)}
-        />
-      )}
-      {recording && <WearSheet items={wornItems} onClose={() => setRecording(false)} />}
+      <AnimatePresence>
+        {picking && (
+          <PickSheet
+            key="pick"
+            slot={picking}
+            closet={closet}
+            currentId={worn[picking]}
+            onPick={pick}
+            onRemove={() => (remove(picking), setPicking(null))}
+            onClose={() => setPicking(null)}
+          />
+        )}
+        {recording && <WearSheet key="wear" items={wornItems} onClose={() => setRecording(false)} />}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,8 +1,10 @@
 // 기능: 모디 안내. 한 줄 말풍선과 빈 화면, 대기 화면에 쓰는 큰 안내
 
+import { AnimatePresence, m } from 'framer-motion';
 import type { ReactNode } from 'react';
 import type { CalendarEvent, CurrentWeather } from '../api/types';
 import { formatTime } from '../lib/date';
+import { QUICK, fadeUp } from '../lib/motion';
 import { Modi, type ModiPose } from './Modi';
 
 // 날씨에 맞는 모디 포즈. 비와 눈에는 우산, 쌀쌀하면 움츠린 모습
@@ -30,7 +32,11 @@ export function ModiNote({ pose = 'pick', children }: { pose?: ModiPose; childre
       <Modi pose={pose} size={52} />
       <p className="modi-note__line">
         <span className="modi-note__name">모디</span>
-        {children}
+        <AnimatePresence mode="wait" initial={false}>
+          <m.span key={typeof children === 'string' ? children : pose} className="modi-note__text" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={QUICK}>
+            {children}
+          </m.span>
+        </AnimatePresence>
       </p>
     </div>
   );
@@ -45,11 +51,11 @@ interface ModiStateProps {
 
 export function ModiState({ pose = 'think', title, children, action }: ModiStateProps) {
   return (
-    <div className="modi-state">
+    <m.div className="modi-state" variants={fadeUp} initial="hidden" animate="show">
       <Modi pose={pose} size={120} />
       <p className="modi-state__title">{title}</p>
       {children && <div className="modi-state__body">{children}</div>}
       {action}
-    </div>
+    </m.div>
   );
 }

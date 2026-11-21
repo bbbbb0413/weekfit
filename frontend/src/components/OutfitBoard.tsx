@@ -1,7 +1,9 @@
 // 기능: 코디 보드. 겉옷, 상의, 하의, 신발을 사진 칸으로 한눈에 표시
 
+import { m } from 'framer-motion';
 import type { Clothing, Outfit, OutfitSlot } from '../api/types';
 import { COLOR_HEX, SLOT_LABEL, itemLabel } from '../lib/labels';
+import { EASE_OUT, list, listItem } from '../lib/motion';
 import { photoOf } from '../lib/photos';
 import { PlusIcon, SwapIcon } from './icons';
 
@@ -38,9 +40,11 @@ function slotsFor(pieces: Pieces): OutfitSlot[] {
   return pieces.DRESS ? ['OUTER', 'DRESS', 'SHOES'] : ['OUTER', 'TOP', 'BOTTOM', 'SHOES'];
 }
 
+// key 가 바뀌면 새로 그려져서 바꾼 옷이 0.25초 동안 올라오며 나타남
 function Picture({ piece }: { piece: Piece }) {
-  if (piece.src) return <img className="board__photo" src={piece.src} alt="" referrerPolicy="no-referrer" />;
-  return <span className="board__swatch" style={{ background: piece.swatch }} aria-hidden="true" />;
+  const enter = { initial: { opacity: 0, y: 12, scale: 0.94 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { duration: 0.25, ease: EASE_OUT } };
+  if (piece.src) return <m.img key={piece.key} className="board__photo" src={piece.src} alt="" referrerPolicy="no-referrer" {...enter} />;
+  return <m.span key={piece.key} className="board__swatch" style={{ background: piece.swatch }} aria-hidden="true" {...enter} />;
 }
 
 interface OutfitBoardProps {
@@ -81,9 +85,9 @@ export function OutfitBoard({ pieces, onSlot, busy }: OutfitBoardProps) {
         return (
           <li key={slot} className={`board__slot board__slot--${slot.toLowerCase()}${piece?.trial ? ' is-trial' : ''}`}>
             {onSlot ? (
-              <button type="button" className="board__cell" onClick={() => onSlot(slot)} aria-label={piece ? `${label} ${piece.name}, 바꾸기` : `${label} 더하기`}>
+              <m.button type="button" className="board__cell" whileTap={{ scale: 0.97 }} onClick={() => onSlot(slot)} aria-label={piece ? `${label} ${piece.name}, 바꾸기` : `${label} 더하기`}>
                 {body}
-              </button>
+              </m.button>
             ) : (
               <div className="board__cell">{body}</div>
             )}
@@ -98,18 +102,18 @@ export function OutfitBoard({ pieces, onSlot, busy }: OutfitBoardProps) {
 export function OutfitStrip({ pieces }: { pieces: Pieces }) {
   const slots = slotsFor(pieces).filter((slot) => pieces[slot]);
   return (
-    <ul className="strip">
+    <m.ul className="strip" variants={list} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
       {slots.map((slot) => {
         const piece = pieces[slot]!;
         return (
-          <li key={slot} className="strip__item">
+          <m.li key={slot} className="strip__item" variants={listItem}>
             <span className="strip__picture">
               <Picture piece={piece} />
             </span>
             <span className="strip__name">{piece.name}</span>
-          </li>
+          </m.li>
         );
       })}
-    </ul>
+    </m.ul>
   );
 }

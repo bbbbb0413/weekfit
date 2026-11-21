@@ -1,7 +1,9 @@
 // 기능: 짧은 안내 문구 (화면 하단)
 
-import { create } from 'zustand';
+import { AnimatePresence, m } from 'framer-motion';
 import { useEffect } from 'react';
+import { create } from 'zustand';
+import { SPRING } from '../lib/motion';
 
 interface ToastState {
   message: string | null;
@@ -24,7 +26,13 @@ export function Toast() {
   }, [message, hide]);
   return (
     <div className="toast-region" role="status" aria-live="polite">
-      {message && <div className="toast">{message}</div>}
+      <AnimatePresence>
+        {message && (
+          <m.div key={message} className="toast" initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8 }} transition={SPRING}>
+            {message}
+          </m.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

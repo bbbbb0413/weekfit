@@ -1,5 +1,6 @@
 // 기능: 주간 화면. 세탁 할 일을 먼저, 이어서 7일 코디와 일정
 
+import { AnimatePresence, m } from 'framer-motion';
 import { useState } from 'react';
 import type { DayPlan } from '../api/types';
 import { AddEventSheet } from '../components/AddEventSheet';
@@ -10,10 +11,11 @@ import { AlertIcon, PlusIcon } from '../components/icons';
 import { useClothes, useDeleteEvent, useStartLaundry, useWeekPlan } from '../hooks/queries';
 import { dayOfMonth, formatDeadline, formatTime, today, weekdayOf } from '../lib/date';
 import { CONDITION_LABEL, TPO_LABEL } from '../lib/labels';
+import { QUICK, TAP, fadeUp } from '../lib/motion';
 
 function DayRow({ day, isToday, onRemoveEvent }: { day: DayPlan; isToday: boolean; onRemoveEvent: (id: string, title: string) => void }) {
   return (
-    <li className={`day${isToday ? ' is-today' : ''}`}>
+    <m.li className={`day${isToday ? ' is-today' : ''}`} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
       <div className="day__date">
         <span className="day__weekday">{isToday ? '오늘' : weekdayOf(day.date)}</span>
         <span className="day__num">{dayOfMonth(day.date)}</span>
@@ -52,7 +54,7 @@ function DayRow({ day, isToday, onRemoveEvent }: { day: DayPlan; isToday: boolea
           </p>
         ))}
       </div>
-    </li>
+    </m.li>
   );
 }
 
@@ -104,38 +106,42 @@ export function WeekPage() {
 
       {data && (
         <>
-          <section className="laundry" aria-label="세탁 할 일">
+          <m.section className="laundry" aria-label="세탁 할 일" variants={fadeUp} initial="hidden" animate="show">
             <h2 className="section-title">세탁 할 일</h2>
             {tasks.length === 0 && data.conflicts.length === 0 ? (
               <p className="laundry__none">이번 주 코디에 필요한 옷은 모두 입을 수 있는 상태예요.</p>
             ) : (
               <ul className="laundry__list">
-                {tasks.map((task) => (
-                  <li key={`${task.forDate}-${task.itemIds.join()}`} className="laundry__task">
-                    <div className="laundry__text">
-                      <p className="laundry__deadline">{formatDeadline(task.deadline)}까지 시작</p>
-                      <p className="laundry__items">{task.itemNames.join(', ')}</p>
-                      <p className="laundry__reason">{task.reason}</p>
-                    </div>
-                    {washableNow(task.itemIds) ? (
-                      <button
-                        type="button"
-                        className="button button--primary button--small"
-                        disabled={laundry.isPending}
-                        onClick={() =>
-                          laundry
-                            .mutateAsync(task.itemIds)
-                            .then(() => toast(`${task.itemNames.join(', ')} 세탁을 시작했어요.`))
-                            .catch((e: Error) => toast(e.message))
-                        }
-                      >
-                        세탁 시작
-                      </button>
-                    ) : (
-                      <span className="laundry__later">입은 뒤 세탁</span>
-                    )}
-                  </li>
-                ))}
+                {/* 세탁을 시작하면 그 줄이 접히며 사라짐 */}
+                <AnimatePresence initial={false}>
+                  {tasks.map((task) => (
+                    <m.li key={`${task.forDate}-${task.itemIds.join()}`} className="laundry__task" layout exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }} transition={QUICK}>
+                      <div className="laundry__text">
+                        <p className="laundry__deadline">{formatDeadline(task.deadline)}까지 시작</p>
+                        <p className="laundry__items">{task.itemNames.join(', ')}</p>
+                        <p className="laundry__reason">{task.reason}</p>
+                      </div>
+                      {washableNow(task.itemIds) ? (
+                        <m.button
+                          type="button"
+                          whileTap={TAP}
+                          className="button button--primary button--small"
+                          disabled={laundry.isPending}
+                          onClick={() =>
+                            laundry
+                              .mutateAsync(task.itemIds)
+                              .then(() => toast(`${task.itemNames.join(', ')} 세탁을 시작했어요.`))
+                              .catch((e: Error) => toast(e.message))
+                          }
+                        >
+                          세탁 시작
+                        </m.button>
+                      ) : (
+                        <span className="laundry__later">입은 뒤 세탁</span>
+                      )}
+                    </m.li>
+                  ))}
+                </AnimatePresence>
                 {data.conflicts.map((c) => (
                   <li key={c} className="caution">
                     <AlertIcon width={16} height={16} /> {c}
@@ -143,7 +149,7 @@ export function WeekPage() {
                 ))}
               </ul>
             )}
-          </section>
+          </m.section>
 
           <ol className="days">
             {data.days.map((day) => (
@@ -163,7 +169,7 @@ export function WeekPage() {
         </>
       )}
 
-      {adding && <AddEventSheet start={start} onClose={() => setAdding(false)} />}
+      <AnimatePresence>{adding && <AddEventSheet key="event" start={start} onClose={() => setAdding(false)} />}</AnimatePresence>
     </div>
   );
 }
