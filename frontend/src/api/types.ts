@@ -305,5 +305,14 @@ export interface FindResult {
   elapsedMs: number;
 }
 
+export interface DayPlanRequest {
+  date: string;
+  // 반드시 포함할 옷
+  anchorItemId?: string;
+  tpo?: Tpo;
+  lat?: number;
+  lon?: number;
+}
+
 // 응답 출처 표시용. 화면에서 데모 계산 여부 안내
 export type Sourced<T> = { data: T; source: 'server' | 'local' };

@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_MODE?: 'mock' | 'real';
+  readonly VITE_SHARED_DEMO_USER?: string;
   readonly VITE_API_BASE_URL?: string;
 }
 

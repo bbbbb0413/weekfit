@@ -1,11 +1,13 @@
 // 기능: 화면에서 쓰는 API 함수. mock 모드는 브라우저 데모 데이터, real 모드는 백엔드 호출
 
 import { API_MODE, ApiError, get, send, upload } from './client';
-import { analyzeEvent, evaluateOutfit, maskText, planWeek } from './local/engine';
+import { analyzeEvent, evaluateOutfit, maskText, planDayLocal, planWeek } from './local/engine';
 import { localStore } from './local/store';
 import type {
   CalendarEvent,
   Category,
+  DayPlan,
+  DayPlanRequest,
   Clothing,
   ClothingAnalysisResult,
   ClothingCreateRequest,
@@ -26,8 +28,12 @@ import type {
   WeekPlan,
 } from './types';
 import { addDays, dateOfIso, today } from '../lib/date';
+import { place } from '../lib/session';
 
 const mock = API_MODE === 'mock';
+
+// 사용자가 허용한 위치가 있으면 날씨 & 추천 요청에 함께 보냄
+const where = () => place() ?? {};
 
 // 백엔드에 아직 없는 엔드포인트면 대체 계산으로 전환. busyToo 를 주면 요청 한도 초과(429) & 일시 장애(503)에도 전환
 async function orLocal<T>(remote: () => Promise<T>, local: () => T | Promise<T>, busyToo = false): Promise<T> {
@@ -66,8 +72,14 @@ export const api = {
   recordWear: (body: WearLogRequest): Promise<WearLog> =>
     mock ? Promise.resolve(localStore.recordWear(body)) : send('POST', '/api/wear-logs', body),
 
+  listWearLogs: (from: string, to: string): Promise<WearLog[]> =>
+    orLocal(
+      () => get('/api/wear-logs', { from, to }),
+      () => (mock ? localStore.listWearLogs(from, to) : []),
+    ),
+
   // ---------- 날씨 ----------
-  weather: (): Promise<WeatherReport> => (mock ? localStore.weather() : get('/api/weather')),
+  weather: (): Promise<WeatherReport> => (mock ? localStore.weather(place()) : get('/api/weather', where())),
   // 데모 전용: 오늘 날씨를 다른 상황으로 바꿔 보기
   demoWeather: () => localStore.demoWeather(),
   setDemoWeather: (condition: WeatherCondition | null) => localStore.setDemoWeather(condition),
@@ -91,6 +103,13 @@ export const api = {
       () => (localStore.deleteEvent(id), null),
     ),
 
+  // 가져온 캘린더 일정으로 해당 기간을 통째로 맞춤. 목록에 없는 기존 일정은 지워짐
+  syncEvents: (from: string, to: string, events: EventInput[]): Promise<CalendarEvent[]> =>
+    orLocal(
+      () => send('PUT', '/api/events/sync', { from, to, events }),
+      () => localStore.syncEvents(from, to, events),
+    ),
+
   maskPreview: (title: string, location?: string): Promise<MaskPreview> =>
     orLocal(
       () => send('POST', '/api/events/mask-preview', { title, location }),
@@ -100,7 +119,7 @@ export const api = {
   // ---------- 추천 & 평가 ----------
   weekPlan: (start: string): Promise<WeekPlan> =>
     orLocal(
-      () => get('/api/plans/week', { start }),
+      () => get('/api/plans/week', { start, ...where() }),
       async () => {
         const [closet, events, weather] = await Promise.all([
           api.listClothes(),
@@ -118,9 +137,23 @@ export const api = {
       },
     ),
 
+  // 하루 추천. 꼭 입을 옷이나 옷차림 기준을 정해 다시 고를 때 사용
+  planDay: (body: DayPlanRequest): Promise<DayPlan> =>
+    orLocal(
+      () => send('POST', '/api/plans/day', { ...where(), ...body }),
+      async () => {
+        const [closet, events, weather] = await Promise.all([
+          api.listClothes(),
+          api.listEvents(body.date, body.date),
+          api.weather().catch(() => null),
+        ]);
+        return planDayLocal({ body, closet, events, daily: weather?.daily ?? [], warmthBias: mock ? localStore.warmthBias() : 0 });
+      },
+    ),
+
   evaluate: (body: EvaluateRequest): Promise<OutfitEvaluation> =>
     orLocal(
-      () => send('POST', '/api/outfits/evaluate', body),
+      () => send('POST', '/api/outfits/evaluate', { ...where(), ...body }),
       async () => {
         const date = body.date ?? today();
         const [closet, events, weather] = await Promise.all([

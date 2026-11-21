@@ -25,6 +25,8 @@ import { josa } from '../../lib/josa';
 const LAYERING_RANGE = 8;
 const RAIN_ALERT = 50;
 
+const TPO_NAME: Record<Tpo, string> = { DAILY: '일상', WORK: '출근', FORMAL: '격식 있는 자리', DATE: '데이트', OUTDOOR: '야외활동', EXERCISE: '운동' };
+
 const TPO_FORMALITY: Record<Tpo, number> = {
   DAILY: 2,
   WORK: 3,
@@ -497,5 +499,48 @@ export function planWeek(ctx: PlanContext): WeekPlan {
     laundryTasks: laundryTasks.sort((a, b) => a.deadline.localeCompare(b.deadline)),
     conflicts,
     aiAvailable: false,
+  };
+}
+
+// 하루 추천의 브라우저 계산. 옷차림 기준을 주면 그 기준의 일정이 있는 것처럼 계산하고, 꼭 입을 옷은 해당 칸에 고정
+export function planDayLocal(input: {
+  body: { date: string; anchorItemId?: string; tpo?: Tpo };
+  closet: Clothing[];
+  events: CalendarEvent[];
+  daily: DailyWeather[];
+  warmthBias: number;
+}): DayPlan {
+  const { body, closet, daily, warmthBias } = input;
+  const events: CalendarEvent[] = body.tpo
+    ? [
+        {
+          id: 'local-tpo',
+          externalId: null,
+          title: TPO_NAME[body.tpo],
+          location: null,
+          startsAt: `${body.date}T10:00:00+09:00`,
+          endsAt: `${body.date}T11:00:00+09:00`,
+          analysis: { ...analyzeEvent(''), tpo: body.tpo, formality: TPO_FORMALITY[body.tpo], importance: 5, clarifyQuestion: null },
+        },
+      ]
+    : input.events;
+  const week = planWeek({ start: body.date, closet, events, daily, warmthBias, now: new Date() });
+  const day = { ...week.days[0], events: body.tpo ? [] : week.days[0].events };
+  const anchor = closet.find((c) => c.id === body.anchorItemId);
+  if (!anchor || anchor.category === 'ACCESSORY') return day;
+
+  const slot = anchor.category;
+  const kept = (day.outfit?.items ?? []).filter((entry) => {
+    if (entry.slot === slot) return false;
+    // 원피스는 상의 & 하의와 함께 입지 않음
+    if (slot === 'DRESS') return entry.slot !== 'TOP' && entry.slot !== 'BOTTOM';
+    if (slot === 'TOP' || slot === 'BOTTOM') return entry.slot !== 'DRESS';
+    return true;
+  });
+  const items = [...kept, { slot, item: anchor }];
+  return {
+    ...day,
+    outfit: { items, warmth: outfitWarmth(items.map((entry) => entry.item)) },
+    reason: `${josa(itemLabel(anchor), '을를')} 꼭 입는 것으로 두고 나머지를 맞췄어요.`,
   };
 }

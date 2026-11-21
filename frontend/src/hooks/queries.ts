@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
-import type { ClothingCreateRequest, EventInput, ItemStatus, WearLogRequest } from '../api/types';
+import type { ClothingCreateRequest, ClothingSpec, EventInput, ItemStatus, Tpo, WearLogRequest } from '../api/types';
 
 export const keys = {
   clothes: ['clothes'] as const,
@@ -28,15 +28,20 @@ export function useWeekPlan(start: string) {
 }
 
 // 보드에 올린 옷이 바뀔 때마다 다시 평가. 새 점수가 올 때까지 이전 점수 유지
-export function useEvaluation(itemIds: string[], date: string, eventId: string | undefined, enabled: boolean) {
+// tpo 를 주면 일정 대신 그 옷차림 기준으로 평가
+export function useEvaluation(itemIds: string[], date: string, eventId: string | undefined, enabled: boolean, tpo?: Tpo) {
   const ids = [...itemIds].sort();
   return useQuery({
-    queryKey: ['evaluation', date, eventId ?? null, ids],
-    queryFn: () => api.evaluate({ itemIds: ids, date, eventId }),
+    queryKey: ['evaluation', date, tpo ?? eventId ?? null, ids],
+    queryFn: () => api.evaluate(tpo ? { itemIds: ids, date, tpo } : { itemIds: ids, date, eventId }),
     enabled,
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   });
+}
+
+export function useWearLogs(date: string) {
+  return useQuery({ queryKey: ['wearLogs', date], queryFn: () => api.listWearLogs(date, date) });
 }
 
 // 옷이나 일정이 바뀌면 주간 계획도 다시 계산
@@ -47,12 +52,26 @@ function useRefresh() {
     client.invalidateQueries({ queryKey: ['events'] });
     client.invalidateQueries({ queryKey: ['weekPlan'] });
     client.invalidateQueries({ queryKey: ['evaluation'] });
+    client.invalidateQueries({ queryKey: ['wearLogs'] });
   };
 }
 
 export function useCreateClothing() {
   const refresh = useRefresh();
   return useMutation({ mutationFn: (body: ClothingCreateRequest) => api.createClothing(body), onSuccess: refresh });
+}
+
+export function useUpdateClothing() {
+  const refresh = useRefresh();
+  return useMutation({ mutationFn: ({ id, body }: { id: string; body: ClothingSpec }) => api.updateClothing(id, body), onSuccess: refresh });
+}
+
+export function useSyncEvents() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ from, to, events }: { from: string; to: string; events: EventInput[] }) => api.syncEvents(from, to, events),
+    onSuccess: refresh,
+  });
 }
 
 export function useDeleteClothing() {

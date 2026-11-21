@@ -1,6 +1,10 @@
-// 기능: 백엔드 호출 공통 처리 (응답 envelope 해제, 오류 변환)
+// 기능: 백엔드 호출 공통 처리 (사용자 식별 헤더, 응답 envelope 해제, 오류 변환)
+
+import { userId } from '../lib/session';
 
 export const API_MODE: 'mock' | 'real' = import.meta.env.VITE_API_MODE === 'real' ? 'real' : 'mock';
+// true 면 X-User-Id 를 보내지 않아 모든 접속자가 백엔드의 데모 사용자 옷장을 함께 씀
+export const SHARED_DEMO_USER = import.meta.env.VITE_SHARED_DEMO_USER === 'true';
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
 
 export class ApiError extends Error {
@@ -34,7 +38,11 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
-      headers: init.body instanceof FormData ? init.headers : { 'Content-Type': 'application/json', ...init.headers },
+      headers: {
+        ...(SHARED_DEMO_USER ? {} : { 'X-User-Id': userId() }),
+        ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+        ...init.headers,
+      },
     });
   } catch {
     throw new ApiError('서버에 연결하지 못했어요. 백엔드가 켜져 있는지 확인해 주세요.', 0);

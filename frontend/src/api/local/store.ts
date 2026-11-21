@@ -219,6 +219,17 @@ export const localStore = {
     return log;
   },
 
+  listWearLogs(from: string, to: string): WearLog[] {
+    return db().wearLogs.filter((log) => log.date >= from && log.date <= to);
+  },
+
+  // 기간 안의 기존 일정을 가져온 일정으로 바꿈
+  syncEvents(from: string, to: string, inputs: EventInput[]): CalendarEvent[] {
+    db().events = db().events.filter((e) => e.startsAt.slice(0, 10) < from || e.startsAt.slice(0, 10) > to);
+    inputs.forEach((input) => this.createEvent(input));
+    return this.listEvents(from, to);
+  },
+
   listEvents(from: string, to: string): CalendarEvent[] {
     return db()
       .events.filter((e) => e.startsAt.slice(0, 10) >= from && e.startsAt.slice(0, 10) <= to)
@@ -246,10 +257,10 @@ export const localStore = {
     commit();
   },
 
-  async weather(): Promise<WeatherReport> {
+  async weather(where?: { lat: number; lon: number } | null): Promise<WeatherReport> {
     let report: WeatherReport;
     try {
-      report = await openMeteo();
+      report = await openMeteo(where?.lat ?? 37.5665, where?.lon ?? 126.978);
     } catch {
       report = sampleWeather(today());
     }
@@ -370,10 +381,10 @@ function fromWmo(code: number | null | undefined): WeatherCondition {
 }
 
 // 데모 모드에서 서울 예보 직접 조회. 실패하면 예시 예보 사용
-async function openMeteo(): Promise<WeatherReport> {
+async function openMeteo(lat: number, lon: number): Promise<WeatherReport> {
   const params = new URLSearchParams({
-    latitude: '37.5665',
-    longitude: '126.978',
+    latitude: String(lat),
+    longitude: String(lon),
     current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m',
     hourly: 'temperature_2m,apparent_temperature,precipitation_probability,weather_code',
     daily:
