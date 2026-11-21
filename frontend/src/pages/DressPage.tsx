@@ -9,6 +9,8 @@ import { AddClothingSheet } from '../components/AddClothingSheet';
 import { ClosetRack, rackCategories } from '../components/ClosetRack';
 import { EvaluationSheet } from '../components/EvaluationSheet';
 import { ItemSheet } from '../components/ItemSheet';
+import { ModiNote } from '../components/ModiNote';
+import logo from '../assets/modi/logo.webp';
 import { Stage } from '../components/Stage';
 import { useToast } from '../components/Toast';
 import { WearSheet } from '../components/WearSheet';
@@ -84,6 +86,7 @@ export function DressPage() {
     <div className="page page--dress">
       <header className="today">
         <div>
+          <img className="today__logo" src={logo} alt="modi" />
           <h1 className="today__date">{formatMonthDay(date)}</h1>
           {event ? (
             <p className="today__event">
@@ -111,6 +114,8 @@ export function DressPage() {
           </div>
         )}
       </header>
+
+      <ModiNote weather={current} event={event} />
 
       <Stage condition={condition} worn={wornItems} rack={rackItems} wornIds={ids} onPick={toggle}>
         {API_MODE === 'mock' && (
