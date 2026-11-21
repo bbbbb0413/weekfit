@@ -31,6 +31,7 @@ export function ClosetPage() {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [managingId, setManagingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const closet = clothes.data ?? [];
   const categories = ORDER.filter((category) => closet.some((c) => c.category === category));
@@ -43,6 +44,7 @@ export function ClosetPage() {
   const active = filters.some(([value]) => value === filter) ? filter : 'ALL';
   const shown = closet.filter((c) => (active === 'ALL' ? true : active === 'WASH' ? needsCare(c) : c.category === active));
   const managing = closet.find((c) => c.id === managingId) ?? null;
+  const editing = closet.find((c) => c.id === editingId) ?? null;
 
   return (
     <div className="page page--closet">
@@ -130,7 +132,8 @@ export function ClosetPage() {
       )}
 
       <AnimatePresence>
-        {managing && <ItemSheet key="item" item={managing} onClose={() => setManagingId(null)} />}
+        {managing && <ItemSheet key="item" item={managing} onEdit={() => (setEditingId(managing.id), setManagingId(null))} onClose={() => setManagingId(null)} />}
+        {editing && <AddClothingSheet key="edit" item={editing} onClose={() => setEditingId(null)} />}
         {adding && <AddClothingSheet key="add" onClose={() => setAdding(false)} />}
       </AnimatePresence>
     </div>

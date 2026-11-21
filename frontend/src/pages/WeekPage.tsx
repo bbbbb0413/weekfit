@@ -1,7 +1,7 @@
 // 기능: 주간 화면. 세탁 할 일을 먼저, 이어서 7일 코디와 일정
 
 import { AnimatePresence, m } from 'framer-motion';
-import { useState } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import type { DayPlan } from '../api/types';
 import { AddEventSheet } from '../components/AddEventSheet';
 import { ModiNote, ModiState } from '../components/ModiNote';
@@ -9,8 +9,9 @@ import { OutfitStrip, piecesOf } from '../components/OutfitBoard';
 import { Spinner, WeekSkeleton } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { AlertIcon, PlusIcon } from '../components/icons';
-import { useClothes, useDeleteEvent, useStartLaundry, useWeekPlan } from '../hooks/queries';
-import { dayOfMonth, formatDeadline, formatTime, today, weekdayOf } from '../lib/date';
+import { useClothes, useDeleteEvent, useStartLaundry, useSyncEvents, useWeekPlan } from '../hooks/queries';
+import { addDays, dateOfIso, dayOfMonth, formatDeadline, formatTime, today, weekdayOf } from '../lib/date';
+import { parseIcs } from '../lib/ics';
 import { CONDITION_LABEL, TPO_LABEL } from '../lib/labels';
 import { QUICK, TAP, fadeUp } from '../lib/motion';
 
@@ -67,6 +68,28 @@ export function WeekPage() {
   const removeEvent = useDeleteEvent();
   const toast = useToast((s) => s.show);
   const [adding, setAdding] = useState(false);
+  const sync = useSyncEvents();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // 캘린더에서 내보낸 .ics 파일의 이번 주 일정을 가져옴
+  const importCalendar = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    const end = addDays(start, 6);
+    const events = parseIcs(await file.text())
+      .filter((e) => dateOfIso(e.startsAt) >= start && dateOfIso(e.startsAt) <= end)
+      .slice(0, 100);
+    if (events.length === 0) {
+      toast('파일에 이번 주 일정이 없어요.');
+      return;
+    }
+    if (!window.confirm(`이번 주 일정 ${events.length}개를 가져올까요? 지금 있는 이번 주 일정은 가져온 일정으로 바뀌어요.`)) return;
+    sync
+      .mutateAsync({ from: start, to: end, events })
+      .then(() => toast(`일정 ${events.length}개를 가져오고 계획을 다시 짰어요.`))
+      .catch((e: Error) => toast(e.message));
+  };
 
   // 지금 세탁기에 넣어도 되는 옷인지 (이미 세탁할 때가 된 옷만)
   const washableNow = (itemIds: string[]) =>
@@ -89,6 +112,13 @@ export function WeekPage() {
           <PlusIcon width={18} height={18} /> 일정 추가
         </button>
       </header>
+      <p className="import-line">
+        구글 캘린더나 기기 캘린더에서 내보낸 파일(.ics)로 한 번에 넣을 수 있어요.
+        <input ref={fileRef} className="visually-hidden" type="file" accept=".ics,text/calendar" aria-label="캘린더 파일 고르기" onChange={importCalendar} />
+        <button type="button" className="text-button" disabled={sync.isPending} onClick={() => fileRef.current?.click()}>
+          {sync.isPending ? '가져오는 중' : '캘린더 파일 가져오기'}
+        </button>
+      </p>
 
       {plan.isPending && (
         <>

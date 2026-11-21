@@ -46,6 +46,7 @@ export function BuyPage() {
   const [linkedQuery, setLinkedQuery] = useState('');
   const [links, setLinks] = useState<MallLink[]>([]);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [text, setText] = useState('');
   // 사진을 바꾼 뒤 늦게 도착한 이전 응답을 버리기 위한 요청 번호
   const requestId = useRef(0);
 
@@ -69,6 +70,7 @@ export function BuyPage() {
     setChosen(null);
     setLinks([]);
     setLinkError(null);
+    setText('');
   };
 
   const loadLinks = async (text: string, category: Category | null, id: number) => {
@@ -102,13 +104,19 @@ export function BuyPage() {
     }
   };
 
-  const startFind = () => {
-    if (!file) return;
-    const id = requestId.current;
+  // 사진으로 찾거나, 사진 없이 글로 찾음
+  const startFind = (byText?: string) => {
+    if (!byText && !file) return;
+    const id = byText ? ++requestId.current : requestId.current;
     setFind({ kind: 'loading' });
     setChosen(null);
+    if (byText) {
+      setLinks([]);
+      setQuery('');
+      setLinkedQuery('');
+    }
     api
-      .shoppingFind({ image: file })
+      .shoppingFind(byText ? { text: byText } : { image: file! })
       .then((found) => {
         if (id !== requestId.current) return;
         if (!found) {
@@ -173,6 +181,23 @@ export function BuyPage() {
           </m.button>
         )}
         {error && <p className="note note--bad">{error}</p>}
+        {!file && (
+          <form
+            className="requery"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (text.trim()) startFind(text.trim());
+            }}
+          >
+            <label className="field">
+              <span className="field__label">사진이 없으면 글로 찾기</span>
+              <input className="input" value={text} maxLength={300} placeholder="네이비 케이블 니트 조끼 비슷한데 더 싼 것" onChange={(e) => setText(e.target.value)} />
+            </label>
+            <button type="submit" className="button button--small" disabled={!text.trim() || find.kind === 'loading'}>
+              더 싼 제품 찾기
+            </button>
+          </form>
+        )}
       </div>
 
       {checking && (
@@ -221,7 +246,7 @@ export function BuyPage() {
           <m.section className="block" aria-label="더 싼 제품" variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.16 }}>
             <h2 className="section-title">그래도 산다면</h2>
             {find.kind === 'idle' ? (
-              <m.button type="button" className="button button--primary button--block" whileTap={TAP} onClick={startFind}>
+              <m.button type="button" className="button button--primary button--block" whileTap={TAP} onClick={() => startFind()}>
                 더 싼 제품 찾기
               </m.button>
             ) : (
@@ -230,35 +255,42 @@ export function BuyPage() {
             {find.kind === 'done' && find.result.items.some((item) => item.imageUrl) && board && <p className="hint">제품을 누르면 위 보드의 {SLOT_LABEL[board.slot]} 칸에 넣어 볼 수 있어요.</p>}
           </m.section>
 
-          {(links.length > 0 || linkError) && (
-            <m.section className="block" aria-label="쇼핑몰 검색" variants={fadeUp} initial="hidden" animate="show">
-              <h2 className="section-title">쇼핑몰에서 직접 찾기</h2>
-              <form className="requery" onSubmit={refine}>
-                <label className="field">
-                  <span className="field__label">검색어</span>
-                  <input className="input" value={query} maxLength={MAX_QUERY} onChange={(e) => setQuery(e.target.value)} />
-                </label>
-                <button type="submit" className="button button--small" disabled={!query.trim() || query.trim() === linkedQuery}>
-                  다시 찾기
-                </button>
-              </form>
-              {linkError && <p className="note note--bad">{linkError}</p>}
-              <ul className="malls">
-                {links.map((link) => (
-                  <li key={link.mall} className="mall">
-                    <span className="mall__text">
-                      <span className="mall__name">{link.mallName}</span>
-                      <span className="mall__sort">{link.sortLabel}</span>
-                    </span>
-                    <a className="button button--small" href={link.url} target="_blank" rel="noreferrer">
-                      검색 결과 보기
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </m.section>
-          )}
         </>
+      )}
+
+      {!data && find.kind !== 'idle' && (
+        <m.section className="block" aria-label="더 싼 제품" variants={fadeUp} initial="hidden" animate="show">
+          <FindCards state={find} selectedUrl={null} onSelect={() => undefined} />
+        </m.section>
+      )}
+
+      {(links.length > 0 || linkError) && (
+        <m.section className="block" aria-label="쇼핑몰 검색" variants={fadeUp} initial="hidden" animate="show">
+          <h2 className="section-title">쇼핑몰에서 직접 찾기</h2>
+          <form className="requery" onSubmit={refine}>
+            <label className="field">
+              <span className="field__label">검색어</span>
+              <input className="input" value={query} maxLength={MAX_QUERY} onChange={(e) => setQuery(e.target.value)} />
+            </label>
+            <button type="submit" className="button button--small" disabled={!query.trim() || query.trim() === linkedQuery}>
+              다시 찾기
+            </button>
+          </form>
+          {linkError && <p className="note note--bad">{linkError}</p>}
+          <ul className="malls">
+            {links.map((link) => (
+              <li key={link.mall} className="mall">
+                <span className="mall__text">
+                  <span className="mall__name">{link.mallName}</span>
+                  <span className="mall__sort">{link.sortLabel}</span>
+                </span>
+                <a className="button button--small" href={link.url} target="_blank" rel="noreferrer">
+                  검색 결과 보기
+                </a>
+              </li>
+            ))}
+          </ul>
+        </m.section>
       )}
     </div>
   );

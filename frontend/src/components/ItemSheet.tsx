@@ -9,7 +9,7 @@ import { ItemFigure } from './ItemFigure';
 import { Sheet } from './Sheet';
 import { useToast } from './Toast';
 
-export function ItemSheet({ item, onClose }: { item: Clothing; onClose: () => void }) {
+export function ItemSheet({ item, onEdit, onClose }: { item: Clothing; onEdit: () => void; onClose: () => void }) {
   const changeStatus = useChangeStatus();
   const startLaundry = useStartLaundry();
   const remove = useDeleteClothing();
@@ -99,6 +99,9 @@ export function ItemSheet({ item, onClose }: { item: Clothing; onClose: () => vo
             세탁 대기로 옮기기
           </button>
         )}
+        <button type="button" className="button" disabled={busy} onClick={onEdit}>
+          정보 고치기
+        </button>
         {item.status !== 'REPAIR' && (
           <button
             type="button"

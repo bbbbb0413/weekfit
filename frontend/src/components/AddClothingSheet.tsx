@@ -1,10 +1,10 @@
-// 기능: 옷 등록. 사진을 올리면 AI 제안값을 받아 확인 후 저장
+// 기능: 옷 등록 & 정보 고치기. 등록은 사진을 올리면 AI 제안값을 받아 확인 후 저장, 고치기는 저장된 값을 바꿈
 
 import { useState } from 'react';
 import { api } from '../api';
-import { COLORS, STYLES, type Category, type ClothingAnalysisResult, type Color, type Style } from '../api/types';
+import { COLORS, STYLES, type Category, type Clothing, type ClothingAnalysisResult, type Color, type Style } from '../api/types';
 import { CATEGORY_LABEL, COLOR_HEX, FORMALITY_LABEL, WARMTH_LABEL } from '../lib/labels';
-import { useCreateClothing } from '../hooks/queries';
+import { useCreateClothing, useUpdateClothing } from '../hooks/queries';
 import { PhotoPicker } from './PhotoPicker';
 import { Sheet } from './Sheet';
 import { FormSkeleton, Spinner } from './Skeleton';
@@ -17,21 +17,23 @@ function toggleIn<T>(list: T[], value: T, max: number): T[] {
   return list.length >= max ? list : [...list, value];
 }
 
-export function AddClothingSheet({ onClose }: { onClose: () => void }) {
+// item 을 주면 그 옷의 정보를 고치는 시트
+export function AddClothingSheet({ item, onClose }: { item?: Clothing; onClose: () => void }) {
   const create = useCreateClothing();
+  const update = useUpdateClothing();
   const toast = useToast((s) => s.show);
   const [file, setFile] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<ClothingAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState<Category>('TOP');
-  const [subType, setSubType] = useState('');
-  const [colors, setColors] = useState<Color[]>([]);
-  const [styles, setStyles] = useState<Style[]>([]);
-  const [warmth, setWarmth] = useState(3);
-  const [formality, setFormality] = useState(2);
+  const [name, setName] = useState(item?.name ?? '');
+  const [category, setCategory] = useState<Category>(item?.category ?? 'TOP');
+  const [subType, setSubType] = useState(item?.subType ?? '');
+  const [colors, setColors] = useState<Color[]>(item?.colors.slice(0, 3) ?? []);
+  const [styles, setStyles] = useState<Style[]>(item?.styles.slice(0, 3) ?? []);
+  const [warmth, setWarmth] = useState(item?.warmth ?? 3);
+  const [formality, setFormality] = useState(item?.formality ?? 2);
 
   const pick = async (next: File | null) => {
     setFile(next);
@@ -58,6 +60,16 @@ export function AddClothingSheet({ onClose }: { onClose: () => void }) {
   };
 
   const save = () => {
+    if (item) {
+      update
+        .mutateAsync({ id: item.id, body: { name: name.trim() || null, category, subType: subType.trim() || null, colors, warmth, styles, formality, washThreshold: item.washThreshold } })
+        .then(() => {
+          toast('옷 정보를 고쳤어요.');
+          onClose();
+        })
+        .catch((e: Error) => setError(e.message));
+      return;
+    }
     create
       .mutateAsync({
         name: name.trim() || null,
@@ -76,20 +88,21 @@ export function AddClothingSheet({ onClose }: { onClose: () => void }) {
       .catch((e: Error) => setError(e.message));
   };
 
-  const canSave = colors.length > 0 && !analyzing && !create.isPending;
+  const saving = create.isPending || update.isPending;
+  const canSave = colors.length > 0 && !analyzing && !saving;
 
   return (
     <Sheet
-      title="옷 등록"
+      title={item ? '옷 정보 고치기' : '옷 등록'}
       onClose={onClose}
       footer={
         <button type="button" className="button button--primary button--block" disabled={!canSave} onClick={save}>
-          {create.isPending && <Spinner />}
-          {create.isPending ? '저장하는 중' : '옷장에 걸기'}
+          {saving && <Spinner />}
+          {saving ? '저장하는 중' : item ? '고친 내용 저장' : '옷장에 걸기'}
         </button>
       }
     >
-      <PhotoPicker label="옷 사진 올리기" hint="한 벌만 나오게 찍으면 더 정확해요" file={file} onChange={pick} />
+      {!item && <PhotoPicker label="옷 사진 올리기" hint="한 벌만 나오게 찍으면 더 정확해요" file={file} onChange={pick} />}
 
       {analyzing && (
         <>
