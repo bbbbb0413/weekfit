@@ -32,6 +32,7 @@ dependencies {
 	implementation("org.springframework.ai:spring-ai-starter-model-openai")
 	implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
 	implementation("software.amazon.awssdk:s3")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.1")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
