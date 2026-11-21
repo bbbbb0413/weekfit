@@ -12,6 +12,7 @@ import type {
   ClothingSpec,
   EvaluateRequest,
   EventInput,
+  FindResult,
   ItemStatus,
   MaskPreview,
   OutfitEvaluation,
@@ -159,6 +160,10 @@ export const api = {
     mock
       ? { data: localStore.shoppingSample(), source: 'local' }
       : { data: await upload<ShoppingResult>('/api/shopping/similar', { image }), source: 'server' },
+
+  // AI 웹 검색으로 더 싼 실제 제품 찾기. 20~30초 걸린다. mock 모드는 사진 분석을 못 해 null
+  shoppingFind: async (input: { image?: File; text?: string }): Promise<FindResult | null> =>
+    mock ? null : upload<FindResult>('/api/shopping/find', { image: input.image, text: input.text }),
 
   // 고친 검색어로 쇼핑몰 링크 다시 만들기 (AI 호출 없음)
   shoppingLinks: (query: string, category?: Category | null): Promise<ShoppingResult> =>

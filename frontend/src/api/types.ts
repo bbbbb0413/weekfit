@@ -274,5 +274,36 @@ export interface ShoppingResult {
   links: MallLink[];
 }
 
+// 가성비 제품 찾기(AI 웹 검색) 결과. 아바타 합성 위치: VEST·TOP·OUTER 몸통, BOTTOM 하체, SHOES 발
+export type FindCategory = 'TOP' | 'BOTTOM' | 'OUTER' | 'VEST' | 'SHOES';
+
+export interface FindItem {
+  name: string;
+  // 원, 검색 시점 가격
+  price: number;
+  mall: string;
+  url: string;
+  reason: string;
+  size: string | null;
+  category: FindCategory | null;
+  // 상품 페이지 og:image. 서버 요청을 막는 쇼핑몰은 null
+  imageUrl: string | null;
+  // 배경 제거 이미지. 아직 항상 null
+  cutoutUrl: string | null;
+}
+
+export interface FindResult {
+  analysis: string | null;
+  searchQuery: string | null;
+  original: { name: string; price: number | null } | null;
+  // 0~2개
+  items: FindItem[];
+  // AI 가 실패해도 채워지는 쇼핑몰 검색 링크
+  fallbackLinks: MallLink[];
+  aiAvailable: boolean;
+  warnings: string[];
+  elapsedMs: number;
+}
+
 // 응답 출처 표시용. 화면에서 데모 계산 여부 안내
 export type Sourced<T> = { data: T; source: 'server' | 'local' };

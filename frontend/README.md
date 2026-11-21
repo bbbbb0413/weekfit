@@ -11,6 +11,12 @@ cp .env.example .env.local   # 필요할 때만
 npm run dev                  # http://localhost:5173
 ```
 
+실서버(`http://localhost:8080`)에 붙여 실행하려면 `.env.local`의 `VITE_API_MODE`를 `real`로 바꾸거나, 환경 변수로 넘긴다.
+
+```bash
+VITE_API_MODE=real npm run dev
+```
+
 Node 22 기준이다. `npm run build`는 타입 검사 후 `dist/`에 빌드한다.
 
 ## API 모드
@@ -30,7 +36,7 @@ Node 22 기준이다. `npm run build`는 타입 검사 후 `dist/`에 빌드한�
 |---|---|---|
 | `/` | 옷방. 3D 방 안의 인형에 옷을 입혀 보고 평가받는다. 창밖 날씨가 실제 예보에 맞춰 움직인다. 옷 등록, 상태 변경, 세탁 시작, 착용 기록 | `/api/clothes*`, `/api/laundry`, `/api/weather`, `/api/events`, `/api/outfits/evaluate`, `/api/wear-logs` |
 | `/week` | 주간 계획. 7일 코디, 세탁 할 일, 일정 직접 입력 | `/api/plans/week`, `/api/events*`, `/api/laundry` |
-| `/shop` | 사진으로 가성비 옷 찾기. 검색어를 만들어 쇼핑몰 5곳의 검색 결과로 연결하고, 검색어를 고치면 링크를 다시 만든다 | `/api/shopping/similar`, `/api/shopping/links` |
+| `/shop` | 사진으로 가성비 옷 찾기. 쇼핑몰 5곳의 검색 결과 링크를 3~5초 안에 먼저 보여 주고, AI가 찾은 더 싼 실제 제품 카드(최대 2장)를 20초 안팎에 이어서 채운다. 검색어를 고치면 링크를 다시 만든다. AI 제품 찾기는 `mock` 모드에서 쓸 수 없다고 안내한다 | `/api/shopping/similar`, `/api/shopping/find`, `/api/shopping/links` |
 | `/similar` | 비슷한 옷 보유 검사 | `/api/clothes/similar-check` |
 
 ## 구조
