@@ -6,7 +6,7 @@ import { COLOR_HEX } from '../lib/labels';
 
 export type GarmentItem = Pick<Clothing, 'category' | 'subType' | 'colors' | 'name'>;
 
-const INK = '#14213D';
+const INK = '#3B302D';
 const DARK_FILLS = new Set(['블랙', '네이비', '브라운', '카키', '그린', '레드', '퍼플']);
 
 type TopKind = 'shirt' | 'short' | 'knit' | 'sweat' | 'long';

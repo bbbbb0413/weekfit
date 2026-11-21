@@ -66,8 +66,8 @@ export function ClosetRack({ items, category, onCategory, wornIds, onToggle, onM
                   onClick={() => (wearable ? onToggle(item) : onManage(item))}
                 >
                   <svg className="hanger__hook" viewBox="0 0 80 30" aria-hidden="true">
-                    <path d="M40,14 Q40,4 46,4 Q52,4 52,9" fill="none" stroke="#14213D" strokeWidth="2.5" strokeLinecap="round" />
-                    <path d="M40,14 L8,28 L72,28 Z" fill="none" stroke="#14213D" strokeWidth="2.5" strokeLinejoin="round" />
+                    <path d="M40,14 Q40,4 46,4 Q52,4 52,9" fill="none" stroke="#3B302D" strokeWidth="2.5" strokeLinecap="round" />
+                    <path d="M40,14 L8,28 L72,28 Z" fill="none" stroke="#3B302D" strokeWidth="2.5" strokeLinejoin="round" />
                   </svg>
                   <span className="hanger__figure">
                     <ItemFigure item={item} />

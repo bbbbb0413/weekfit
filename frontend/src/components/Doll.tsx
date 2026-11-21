@@ -5,7 +5,7 @@ import { GarmentLayer } from './Garment';
 import { itemLabel } from '../lib/labels';
 
 const SKIN = '#F0DCCB';
-const INK = '#14213D';
+const INK = '#3B302D';
 
 // 옷을 입히기 전 몸 (기본 속옷 포함). 3D 무대에서는 이 그림만 따로 한 장으로 사용
 export function DollBody() {

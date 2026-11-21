@@ -12,7 +12,7 @@ const SKY: Record<WeatherCondition, string> = {
   THUNDER: '#4E5A78',
 };
 
-const INK = '#14213D';
+const INK = '#3B302D';
 
 function Cloud({ x, y, scale = 1, fill = '#FFFFFF' }: { x: number; y: number; scale?: number; fill?: string }) {
   return (
