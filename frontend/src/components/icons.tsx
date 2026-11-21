@@ -97,3 +97,9 @@ export const SwapIcon = (p: Props) => (
     <path d="M4 8h14l-3.500-3.500M20 16H6l3.500 3.500" />
   </Icon>
 );
+export const SearchIcon = (p: Props) => (
+  <Icon {...p}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.500 4.500" />
+  </Icon>
+);

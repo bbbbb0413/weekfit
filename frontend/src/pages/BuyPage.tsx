@@ -1,6 +1,6 @@
 // 기능: 사기 전에. 사려는 옷 사진 한 장으로 보유 검사, 내 옷과 맞춰 보기, 더 싼 제품 찾기
 
-import { m } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import type { Category, ClothingSuggestion, FindCategory, FindItem, MallLink, OutfitSlot, SimilarCheckResult, Sourced } from '../api/types';
@@ -10,12 +10,21 @@ import { OutfitBoard, piecesOf, type Piece, type Pieces } from '../components/Ou
 import { ModiNote } from '../components/ModiNote';
 import { PhotoPicker } from '../components/PhotoPicker';
 import { ResultSkeleton, Spinner } from '../components/Skeleton';
+import { SearchIcon } from '../components/icons';
 import { useWeekPlan } from '../hooks/queries';
 import { today } from '../lib/date';
 import { CATEGORY_LABEL, SLOT_LABEL, itemLabel } from '../lib/labels';
-import { TAP, fadeUp, list, listItem } from '../lib/motion';
+import { QUICK, SNAPPY, TAP, fadeUp, list, listItem } from '../lib/motion';
 
 const MAX_QUERY = 50;
+
+type Mode = 'photo' | 'text';
+const MODES: Array<[Mode, string]> = [
+  ['photo', '사진으로'],
+  ['text', '글로'],
+];
+// 눌러서 바로 채우는 예시 검색어
+const EXAMPLES = ['네이비 케이블 니트 조끼', '베이지 트렌치코트', '흰색 가죽 스니커즈'];
 
 const VERDICT: Record<SimilarCheckResult['verdict'], string> = {
   DUPLICATE: '거의 같은 옷이 옷장에 있어요',
@@ -47,7 +56,7 @@ export function BuyPage() {
   const [links, setLinks] = useState<MallLink[]>([]);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [text, setText] = useState('');
-  const [typing, setTyping] = useState(false);
+  const [mode, setMode] = useState<Mode>('photo');
   // 사진을 바꾼 뒤 늦게 도착한 이전 응답을 버리기 위한 요청 번호
   const requestId = useRef(0);
 
@@ -72,6 +81,13 @@ export function BuyPage() {
     setLinks([]);
     setLinkError(null);
     setText('');
+  };
+
+  // 찾는 방법을 바꾸면 앞서 본 결과를 비움
+  const switchMode = (next: Mode) => {
+    if (next === mode) return;
+    reset(null);
+    setMode(next);
   };
 
   const loadLinks = async (text: string, category: Category | null, id: number) => {
@@ -174,36 +190,62 @@ export function BuyPage() {
       </header>
 
       <div className="tool">
-        <PhotoPicker label="사려는 옷 사진 올리기" hint="쇼핑몰 상품 사진을 캡처해도 돼요. 얼굴은 나오지 않게 해 주세요" file={file} onChange={reset} />
-        {!data && (
-          <m.button type="button" className="button button--primary button--block" whileTap={TAP} disabled={!file || checking} onClick={compare}>
-            {checking && <Spinner />}
-            {checking ? '옷장과 비교하는 중' : '내 옷장과 비교하기'}
-          </m.button>
-        )}
-        {error && <p className="note note--bad">{error}</p>}
-        {!file && !typing && (
-          <button type="button" className="text-button" onClick={() => setTyping(true)}>
-            사진 없이 글로 찾기
-          </button>
-        )}
-        {!file && typing && (
-          <form
-            className="requery"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (text.trim()) startFind(text.trim());
-            }}
-          >
-            <label className="field">
-              <span className="field__label">찾는 옷</span>
-              <input autoFocus className="input" value={text} maxLength={300} placeholder="네이비 케이블 니트 조끼 비슷한데 더 싼 것" onChange={(e) => setText(e.target.value)} />
-            </label>
-            <button type="submit" className="button button--small" disabled={!text.trim() || find.kind === 'loading'}>
-              더 싼 제품 찾기
+        <div className="segments" role="tablist" aria-label="찾는 방법">
+          {MODES.map(([value, label]) => (
+            <button key={value} type="button" role="tab" aria-selected={mode === value} className={`segment${mode === value ? ' is-on' : ''}`} onClick={() => switchMode(value)}>
+              {mode === value && <m.span className="segment__on" layoutId="buy-mode" transition={SNAPPY} />}
+              <span className="segment__label">{label}</span>
             </button>
-          </form>
-        )}
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait" initial={false}>
+          {mode === 'photo' ? (
+            <m.div key="photo" className="tool__panel" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={QUICK}>
+              <PhotoPicker label="사려는 옷 사진 올리기" hint="쇼핑몰 상품 사진을 캡처해도 돼요. 얼굴은 나오지 않게 해 주세요" file={file} onChange={reset} />
+              {!data && (
+                <m.button type="button" className="button button--primary button--block" whileTap={TAP} disabled={!file || checking} onClick={compare}>
+                  {checking && <Spinner />}
+                  {checking ? '옷장과 비교하는 중' : '내 옷장과 비교하기'}
+                </m.button>
+              )}
+            </m.div>
+          ) : (
+            <m.form
+              key="text"
+              className="tool__panel"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 12 }}
+              transition={QUICK}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (text.trim()) startFind(text.trim());
+              }}
+            >
+              <div className="search-box">
+                <label className="search">
+                  <SearchIcon />
+                  <span className="visually-hidden">찾는 옷</span>
+                  <input autoFocus value={text} maxLength={300} placeholder="어떤 옷을 찾고 있어요?" onChange={(e) => setText(e.target.value)} />
+                </label>
+                <p className="search-box__hint">브랜드나 색, 종류를 적으면 비슷하면서 더 싼 제품을 찾아요.</p>
+                <div className="search-box__examples">
+                  {EXAMPLES.map((example) => (
+                    <button key={example} type="button" className="filter" onClick={() => setText(example)}>
+                      <span className="filter__label">{example}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <m.button type="submit" className="button button--primary button--block" whileTap={TAP} disabled={!text.trim() || find.kind === 'loading'}>
+                {find.kind === 'loading' && <Spinner />}
+                더 싼 제품 찾기
+              </m.button>
+            </m.form>
+          )}
+        </AnimatePresence>
+        {error && <p className="note note--bad">{error}</p>}
       </div>
 
       {checking && (

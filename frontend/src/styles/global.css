@@ -734,10 +734,6 @@ a {
   font-size: 15px;
 }
 
-.tool > .text-button {
-  justify-self: start;
-}
-
 .board-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1317,8 +1313,113 @@ button.board__cell:hover {
 
 .tool {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   padding: 0 var(--gutter);
+}
+
+/* 찾는 방법 고르기 (사진으로, 글로) */
+.segments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  background: var(--tile);
+  border-radius: 10px;
+}
+
+.segment {
+  position: relative;
+  min-height: 42px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+
+.segment.is-on {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segment__on {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.segment__label {
+  position: relative;
+}
+
+.tool__panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+/* 사진 올리는 자리와 같은 크기의 검색 자리 */
+.search-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  min-height: 148px;
+  padding: 16px;
+  background: var(--tile);
+  border-radius: 10px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 12px;
+  background: var(--paper);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+}
+
+.search:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.search svg {
+  flex: none;
+  color: var(--ink-2);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  font-size: 16px;
+}
+
+.search input::placeholder {
+  color: #7d6f68;
+}
+
+.search-box__hint {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.search-box__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.search-box__examples .filter {
+  min-height: 36px;
 }
 
 .block {
