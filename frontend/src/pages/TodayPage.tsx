@@ -5,20 +5,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { API_MODE, api } from '../api';
-import type { CalendarEvent, Clothing, OutfitEvaluation, OutfitSlot, WeatherCondition } from '../api/types';
+import type { CalendarEvent, Clothing, DayPlan, OutfitEvaluation, OutfitSlot, Tpo, WeatherCondition } from '../api/types';
 import logo from '../assets/modi/logo.webp';
 import { CountUp } from '../components/CountUp';
 import { ModiNote, ModiState, poseFor, todayLine } from '../components/ModiNote';
 import { OutfitBoard, pieceOf, type Pieces } from '../components/OutfitBoard';
 import { PickSheet } from '../components/PickSheet';
-import { BoardSkeleton, EventLineSkeleton, VerdictSkeleton } from '../components/Skeleton';
+import { BoardSkeleton, EventLineSkeleton, Spinner, VerdictSkeleton } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 import { WearSheet } from '../components/WearSheet';
 import { WeatherBand } from '../components/WeatherBand';
 import { AlertIcon } from '../components/icons';
-import { useClothes, useEvaluation, useEvents, useWeather, useWeekPlan } from '../hooks/queries';
+import { useClothes, useEvaluation, useEvents, useWearLogs, useWeather, useWeekPlan } from '../hooks/queries';
 import { formatMonthDay, formatTime, today } from '../lib/date';
 import { CONDITION_LABEL, TPO_LABEL, itemLabel, slotOf } from '../lib/labels';
 import { TAP, fadeUp, list, listItem } from '../lib/motion';
+import { place, setPlace } from '../lib/session';
 import { useOutfit, wornIds } from '../store/outfit';
 
 const PREVIEW_ORDER: WeatherCondition[] = ['CLEAR', 'CLOUDY', 'RAIN', 'SNOW', 'FOG', 'THUNDER'];
@@ -29,6 +31,9 @@ const GRADE_LABEL: Record<OutfitEvaluation['grade'], string> = {
   FAIR: '한두 군데만 바꿔 보세요',
   POOR: '다시 골라 보는 게 좋아요',
 };
+
+// 일정이 어떤 자리인지 모호할 때 고르는 옷차림 기준
+const TPO_CHOICES: Tpo[] = ['DAILY', 'WORK', 'FORMAL', 'DATE', 'OUTDOOR', 'EXERCISE'];
 
 const CHECKS = [
   ['weather', '날씨'],
@@ -49,9 +54,18 @@ export function TodayPage() {
   const [picking, setPicking] = useState<OutfitSlot | null>(null);
   const [recording, setRecording] = useState(false);
   const [preview, setPreview] = useState<WeatherCondition | ''>(api.demoWeather() ?? '');
+  // 옷차림 기준을 고르거나 꼭 입을 옷을 정해 다시 받은 하루 추천
+  const [replan, setReplan] = useState<DayPlan | null>(null);
+  const [tpoChoice, setTpoChoice] = useState<Tpo | null>(null);
+  const [anchorId, setAnchorId] = useState<string | null>(null);
+  const [replanning, setReplanning] = useState(false);
+  const [located, setLocated] = useState(() => place() !== null);
+  const [locating, setLocating] = useState(false);
+  const logs = useWearLogs(date);
+  const toast = useToast((s) => s.show);
 
   const closet = clothes.data ?? [];
-  const day = plan.data?.days.find((d) => d.date === date) ?? null;
+  const day = replan ?? plan.data?.days.find((d) => d.date === date) ?? null;
   const planned = useMemo(() => day?.outfit?.items.map((entry) => entry.item) ?? [], [day]);
   const plannedKey = planned.map((item) => item.id).join();
 
@@ -77,26 +91,80 @@ export function TodayPage() {
     null,
   );
   const current = weather.data?.current;
-  const evaluation = useEvaluation(ids, date, event?.id, hasBase);
+  const evaluation = useEvaluation(ids, date, event?.id, hasBase, tpoChoice ?? undefined);
   const result = evaluation.data;
   const byId = (id: string | null) => (id ? closet.find((c) => c.id === id) : undefined);
 
-  // 데모에서 날씨를 바꾸면 띠, 추천, 평가가 함께 바뀜
-  const changePreview = (value: WeatherCondition | '') => {
-    setPreview(value);
-    api.setDemoWeather(value || null);
+  const refreshAll = () => {
+    setReplan(null);
     useOutfit.setState({ custom: false });
     queryClient.invalidateQueries({ queryKey: ['weather'] });
     queryClient.invalidateQueries({ queryKey: ['weekPlan'] });
     queryClient.invalidateQueries({ queryKey: ['evaluation'] });
   };
 
+  // 데모에서 날씨를 바꾸면 띠, 추천, 평가가 함께 바뀜
+  const changePreview = (value: WeatherCondition | '') => {
+    setPreview(value);
+    api.setDemoWeather(value || null);
+    refreshAll();
+  };
+
   const pick = (item: Clothing) => {
-    if (!ids.includes(item.id)) put(item);
+    if (!ids.includes(item.id)) {
+      put(item);
+      setAnchorId(item.id);
+    }
     setPicking(null);
   };
 
-  const done = wornOn === date;
+  // 하루 추천을 다시 받아 보드에 올림
+  const replanDay = async (request: { tpo?: Tpo; anchorItemId?: string }) => {
+    setReplanning(true);
+    try {
+      const next = await api.planDay({ date, tpo: request.tpo ?? tpoChoice ?? undefined, anchorItemId: request.anchorItemId });
+      setReplan(next);
+      if (request.tpo) setTpoChoice(request.tpo);
+      if (next.outfit) follow(next.outfit.items.map((entry) => entry.item));
+      else toast(next.reason);
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setReplanning(false);
+    }
+  };
+
+  // 허락을 받아 현재 위치의 날씨로 바꾸거나 서울 기준으로 되돌림
+  const toggleLocation = () => {
+    if (located) {
+      setPlace(null);
+      setLocated(false);
+      refreshAll();
+      return;
+    }
+    if (!('geolocation' in navigator)) {
+      toast('이 브라우저에서는 위치를 쓸 수 없어요.');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setPlace({ lat: position.coords.latitude, lon: position.coords.longitude });
+        setLocated(true);
+        setLocating(false);
+        refreshAll();
+      },
+      () => {
+        setLocating(false);
+        toast('위치를 확인하지 못했어요. 서울 기준으로 보여 드려요.');
+      },
+      { timeout: 8000, maximumAge: 600_000 },
+    );
+  };
+
+  const anchor = closet.find((c) => c.id === anchorId && ids.includes(c.id)) ?? null;
+  const question = !tpoChoice ? (event?.analysis.clarifyQuestion ?? null) : null;
+  const done = wornOn === date || (logs.data?.length ?? 0) > 0;
   const loading = clothes.isPending || plan.isPending;
 
   return (
@@ -119,6 +187,12 @@ export function TodayPage() {
       </header>
 
       <WeatherBand date={formatMonthDay(date)} weather={current} failed={weather.isError} />
+      <p className="place-line">
+        {located ? '내 위치 기준 날씨예요.' : '서울 기준 날씨예요.'}
+        <button type="button" className="text-button" disabled={locating} onClick={toggleLocation}>
+          {locating ? '위치 확인 중' : located ? '서울 기준으로 보기' : '내 위치로 보기'}
+        </button>
+      </p>
 
       {events.isPending ? (
         <EventLineSkeleton />
@@ -128,7 +202,7 @@ export function TodayPage() {
             <>
               <span className="event-line__time">{formatTime(event.startsAt)}</span>
               <span className="event-line__title">{event.title}</span>
-              <span className="event-line__tpo">{event.analysis.dressCode ?? TPO_LABEL[event.analysis.tpo]}</span>
+              <span className="event-line__tpo">{tpoChoice ? TPO_LABEL[tpoChoice] : (event.analysis.dressCode ?? TPO_LABEL[event.analysis.tpo])}</span>
             </>
           ) : (
             <>
@@ -139,6 +213,19 @@ export function TodayPage() {
             </>
           )}
         </p>
+      )}
+
+      {question && (
+        <m.div className="ask" variants={fadeUp} initial="hidden" animate="show">
+          <p className="ask__question">{question}</p>
+          <div className="choices" role="group" aria-label="어떤 자리인지 고르기">
+            {TPO_CHOICES.map((tpo) => (
+              <m.button key={tpo} type="button" className="choice" whileTap={TAP} disabled={replanning} onClick={() => replanDay({ tpo })}>
+                {TPO_LABEL[tpo]}
+              </m.button>
+            ))}
+          </div>
+        </m.div>
       )}
 
       {loading && (
@@ -183,10 +270,20 @@ export function TodayPage() {
 
           <OutfitBoard pieces={pieces} onSlot={setPicking} busy={evaluation.isFetching} />
 
-          {custom && !done && planned.length > 0 && (
-            <button type="button" className="text-button" onClick={() => follow(planned)}>
-              모디 추천으로 되돌리기
-            </button>
+          {custom && !done && (
+            <div className="board-actions">
+              {anchor && (
+                <m.button type="button" className="button button--small" whileTap={TAP} disabled={replanning} onClick={() => replanDay({ anchorItemId: anchor.id })}>
+                  {replanning && <Spinner />}
+                  {itemLabel(anchor)}에 맞춰 나머지 다시 고르기
+                </m.button>
+              )}
+              {planned.length > 0 && (
+                <button type="button" className="text-button" onClick={() => (setAnchorId(null), follow(planned))}>
+                  모디 추천으로 되돌리기
+                </button>
+              )}
+            </div>
           )}
 
           {!hasBase && <p className="note">{day?.outfit ? '상의와 하의를 넣으면 점수를 볼 수 있어요.' : (day?.reason ?? '상의와 하의를 넣으면 점수를 볼 수 있어요.')}</p>}

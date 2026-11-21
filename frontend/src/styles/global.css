@@ -691,6 +691,46 @@ a {
   }
 }
 
+.place-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--gutter);
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.place-line .text-button {
+  min-height: 36px;
+  font-size: 12px;
+}
+
+.place-line + .event-line,
+.place-line + .loading.event-line {
+  padding-top: 4px;
+}
+
+/* 일정이 모호할 때 되묻기 */
+.ask {
+  margin: 12px var(--gutter) 0;
+  padding: 14px 16px;
+  background: var(--peach-soft);
+  border-radius: 10px;
+}
+
+.ask__question {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.board-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 10px var(--gutter) 0;
+}
+
 .event-line {
   display: flex;
   align-items: baseline;
@@ -862,10 +902,6 @@ button.board__cell:hover {
   to {
     opacity: 0.55;
   }
-}
-
-.page--today > .text-button {
-  margin: 2px var(--gutter) 0;
 }
 
 /* 평가 & 이유 */
@@ -1092,6 +1128,21 @@ button.board__cell:hover {
 }
 
 /* ---------- 주간 ---------- */
+
+.import-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+  margin: -6px var(--gutter) 10px;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.import-line .text-button {
+  min-height: 36px;
+  font-size: 12px;
+}
 
 .laundry {
   margin: 0 var(--gutter);
