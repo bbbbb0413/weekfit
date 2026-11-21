@@ -315,6 +315,174 @@ a {
   box-shadow: var(--paper-shadow);
 }
 
+/* ---------- 옷방 ---------- */
+
+.page--dress {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--tabbar-h) - env(safe-area-inset-bottom) - var(--strip-h, 0px));
+}
+
+.today {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px 4px;
+  background: var(--wall);
+}
+
+.today__date {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.today__event {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.today__time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.today__weather {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.today__temp {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1;
+}
+
+.today__cond {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 270px;
+  max-height: 440px;
+  overflow: hidden;
+  background: var(--wall);
+}
+
+.stage__window {
+  position: absolute;
+  top: 6%;
+  left: 7%;
+  width: 33%;
+  max-width: 150px;
+  filter: drop-shadow(0 4px 0 rgba(20, 33, 61, 0.14));
+}
+
+.stage__floor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 25%;
+  overflow: hidden;
+  background: var(--floor);
+  border-top: 6px solid #f6fbf7;
+  box-shadow: 0 -1.5px 0 var(--ink);
+}
+
+.stage__floor::before {
+  content: '';
+  position: absolute;
+  inset: 0 -80%;
+  background: repeating-linear-gradient(90deg, transparent 0 56px, var(--floor-2) 56px 59px);
+  transform: perspective(200px) rotateX(50deg);
+  transform-origin: top center;
+}
+
+.stage__doll {
+  position: absolute;
+  right: 7%;
+  bottom: 3%;
+  height: 94%;
+}
+
+.doll__layer {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: put-on 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes put-on {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(1.06);
+  }
+}
+
+.stage__hint,
+.stage__clear {
+  position: absolute;
+  bottom: 10px;
+  left: 16px;
+}
+
+.stage__hint {
+  width: 42%;
+  max-width: 170px;
+  padding: 6px 10px;
+  background: var(--paper);
+  border-radius: 10px;
+  box-shadow: var(--paper-shadow);
+  font-size: 13px;
+  line-height: 1.45;
+  transform: rotate(-2deg);
+}
+
+.stage__clear {
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stage__doll,
+.stage__hint,
+.stage__clear {
+  z-index: 1;
+}
+
+.window__rain {
+  animation: fall 0.9s linear infinite;
+}
+
+.window__snow {
+  animation: fall 2.6s linear infinite;
+}
+
+@keyframes fall {
+  from {
+    opacity: 0.35;
+    transform: translate(3px, -9px);
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+    transform: translate(-3px, 9px);
+  }
+}
+
 /* 행거 */
 
 .rack {
