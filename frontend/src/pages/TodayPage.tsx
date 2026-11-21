@@ -101,9 +101,7 @@ export function TodayPage() {
   return (
     <div className="page page--today">
       <header className="top">
-        <Link to="/welcome" aria-label="modi 소개 보기">
-          <img className="top__logo" src={logo} alt="modi" />
-        </Link>
+        <img className="top__logo" src={logo} alt="modi" />
         {API_MODE === 'mock' && (
           <label className="top__preview">
             <span className="visually-hidden">날씨 바꿔 보기</span>
