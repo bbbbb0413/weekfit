@@ -4,9 +4,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { API_MODE } from './api';
 import { TabBar } from './components/TabBar';
 import { Toast } from './components/Toast';
-import { DressPage } from './pages/DressPage';
 import { ShopPage } from './pages/ShopPage';
 import { SimilarPage } from './pages/SimilarPage';
+import { TodayPage } from './pages/TodayPage';
 import { WeekPage } from './pages/WeekPage';
 
 export function App() {
@@ -16,7 +16,7 @@ export function App() {
         {API_MODE === 'mock' && <p className="demo-strip">데모 데이터로 보는 중이에요. 변경 내용은 이 브라우저에만 저장돼요.</p>}
         <main className="app__main">
           <Routes>
-            <Route path="/" element={<DressPage />} />
+            <Route path="/" element={<TodayPage />} />
             <Route path="/week" element={<WeekPage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/similar" element={<SimilarPage />} />

@@ -7,16 +7,18 @@ import { today } from '../lib/date';
 import { useRecordWear } from '../hooks/queries';
 import { Sheet } from './Sheet';
 import { useToast } from './Toast';
+import { useOutfit } from '../store/outfit';
 
 const FEEDBACK: Array<{ value: ThermalFeedback; label: string }> = [
   { value: 'COLD', label: '추웠어요' },
-  { value: 'OK', label: '적당했어요' },
+  { value: 'OK', label: '괜찮았어요' },
   { value: 'HOT', label: '더웠어요' },
 ];
 
 export function WearSheet({ items, onClose }: { items: Clothing[]; onClose: () => void }) {
   const record = useRecordWear();
   const toast = useToast((s) => s.show);
+  const markWorn = useOutfit((s) => s.markWorn);
   const [feedback, setFeedback] = useState<ThermalFeedback | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,6 +26,7 @@ export function WearSheet({ items, onClose }: { items: Clothing[]; onClose: () =
     record
       .mutateAsync({ date: today(), itemIds: items.map((i) => i.id), feedback: feedback ?? undefined })
       .then(() => {
+        markWorn(today());
         toast(feedback ? '기록했어요. 체감은 다음 추천의 두께에 반영돼요.' : '오늘 입은 옷으로 기록했어요.');
         onClose();
       })
@@ -31,7 +34,7 @@ export function WearSheet({ items, onClose }: { items: Clothing[]; onClose: () =
 
   return (
     <Sheet
-      title="오늘 입은 옷으로 기록"
+      title="오늘 이 옷 입기"
       onClose={onClose}
       footer={
         <button type="button" className="button button--primary button--block" disabled={record.isPending} onClick={save}>
@@ -46,7 +49,7 @@ export function WearSheet({ items, onClose }: { items: Clothing[]; onClose: () =
         ))}
       </ul>
       <fieldset className="field">
-        <legend className="field__label">입어보니 어땠나요? (고르지 않아도 돼요)</legend>
+        <legend className="field__label">입어 보니 어땠나요? 저녁에 다시 기록해도 돼요</legend>
         <div className="choices">
           {FEEDBACK.map((f) => (
             <button

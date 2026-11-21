@@ -29,6 +29,11 @@ export const HangerIcon = (p: Props) => (
     <path d="M12 8.5v1.6l8.2 5.6c.9.6.5 2-.6 2H4.4c-1.100 0-1.500-1.400-.6-2L12 10.100" />
   </Icon>
 );
+export const TeeIcon = (p: Props) => (
+  <Icon {...p}>
+    <path d="M8.5 4L3.5 6.5l1.800 4L7.500 9.500V20h9V9.500l2.200 1L20.500 6.500 15.500 4a3.500 3.500 0 0 1-7 0z" />
+  </Icon>
+);
 export const CalendarIcon = (p: Props) => (
   <Icon {...p}>
     <rect x="4" y="5" width="16" height="15" rx="2" />

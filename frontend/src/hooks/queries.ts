@@ -1,6 +1,6 @@
 // 기능: 서버 상태 조회 & 변경 훅
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import type { ClothingCreateRequest, EventInput, ItemStatus, WearLogRequest } from '../api/types';
 
@@ -27,6 +27,18 @@ export function useWeekPlan(start: string) {
   return useQuery({ queryKey: keys.weekPlan(start), queryFn: () => api.weekPlan(start) });
 }
 
+// 보드에 올린 옷이 바뀔 때마다 다시 평가. 새 점수가 올 때까지 이전 점수 유지
+export function useEvaluation(itemIds: string[], date: string, eventId: string | undefined, enabled: boolean) {
+  const ids = [...itemIds].sort();
+  return useQuery({
+    queryKey: ['evaluation', date, eventId ?? null, ids],
+    queryFn: () => api.evaluate({ itemIds: ids, date, eventId }),
+    enabled,
+    staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
 // 옷이나 일정이 바뀌면 주간 계획도 다시 계산
 function useRefresh() {
   const client = useQueryClient();
@@ -34,6 +46,7 @@ function useRefresh() {
     client.invalidateQueries({ queryKey: keys.clothes });
     client.invalidateQueries({ queryKey: ['events'] });
     client.invalidateQueries({ queryKey: ['weekPlan'] });
+    client.invalidateQueries({ queryKey: ['evaluation'] });
   };
 }
 

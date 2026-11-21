@@ -1,20 +1,26 @@
-// 기능: 인형에 입힌 옷 상태
+// 기능: 오늘 코디 보드에 올린 옷 & 착용 기록 여부
 
 import { create } from 'zustand';
 import type { Clothing, OutfitSlot } from '../api/types';
 import { slotOf } from '../lib/labels';
 
-type Worn = Partial<Record<OutfitSlot, string>>;
+export type Worn = Partial<Record<OutfitSlot, string>>;
+
+const WORN_KEY = 'modi.wornOn';
 
 interface OutfitState {
   worn: Worn;
-  toggle: (item: Clothing) => void;
-  replace: (fromId: string, to: Clothing) => void;
-  setOutfit: (items: Clothing[]) => void;
-  clear: () => void;
+  // 추천 코디에서 직접 바꾼 상태
+  custom: boolean;
+  // 착용을 기록한 날짜
+  wornOn: string | null;
+  put: (item: Clothing) => void;
+  remove: (slot: OutfitSlot) => void;
+  follow: (items: Clothing[]) => void;
+  markWorn: (date: string) => void;
 }
 
-function put(worn: Worn, item: Clothing): Worn {
+function place(worn: Worn, item: Clothing): Worn {
   const slot = slotOf(item.category);
   if (!slot) return worn;
   const next: Worn = { ...worn, [slot]: item.id };
@@ -27,29 +33,35 @@ function put(worn: Worn, item: Clothing): Worn {
   return next;
 }
 
+function readWornOn(): string | null {
+  try {
+    return localStorage.getItem(WORN_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export const useOutfit = create<OutfitState>((set) => ({
   worn: {},
-  toggle: (item) =>
-    set((state) => {
-      const slot = slotOf(item.category);
-      if (!slot) return state;
-      if (state.worn[slot] === item.id) {
-        const next = { ...state.worn };
-        delete next[slot];
-        return { worn: next };
-      }
-      return { worn: put(state.worn, item) };
-    }),
-  replace: (fromId, to) =>
+  custom: false,
+  wornOn: readWornOn(),
+  put: (item) => set((state) => ({ worn: place(state.worn, item), custom: true })),
+  remove: (slot) =>
     set((state) => {
       const next = { ...state.worn };
-      (Object.keys(next) as OutfitSlot[]).forEach((slot) => {
-        if (next[slot] === fromId) delete next[slot];
-      });
-      return { worn: put(next, to) };
+      delete next[slot];
+      return { worn: next, custom: true };
     }),
-  setOutfit: (items) => set({ worn: items.reduce<Worn>((worn, item) => put(worn, item), {}) }),
-  clear: () => set({ worn: {} }),
+  follow: (items) => set({ worn: items.reduce<Worn>(place, {}), custom: false }),
+  markWorn: (date) => {
+    try {
+      localStorage.setItem(WORN_KEY, date);
+    } catch {
+      // 저장소를 못 쓰는 환경에서는 이번 방문 동안만 유지
+    }
+    // 기록한 뒤 추천이 다시 계산돼도 입은 옷이 보드에 남도록 고정
+    set({ wornOn: date, custom: true });
+  },
 }));
 
 export function wornIds(worn: Worn): string[] {
