@@ -92,6 +92,9 @@ src/
 | TanStack Query | MIT | 서버 상태 관리 |
 | Zustand | MIT | 화면 상태 관리 |
 | three.js, React Three Fiber | MIT | 3D 옷방 |
+| clothing-dataset-small (Alexey Grigorev) | CC0 1.0 | 데모 옷장의 하의, 아우터, 신발, 스트라이프 티셔츠 사진 12장 (배경 제거 후 사용) |
+| Canva AI 이미지 생성 | AI 생성물 | 데모 옷장의 상의 사진 5장 |
+| modi 로고, 모디 캐릭터 | 팀 제작 (AI 이미지 도구 사용 시 도구명 기재 필요) | 머리말 로고, 모디 안내 |
 | Vite | MIT | 빌드 도구 |
 | IBM Plex Sans KR (Fontsource) | OFL-1.1 | 본문 글꼴 |
 | Bagel Fat One (Fontsource) | OFL-1.1 | 제목과 숫자 글꼴 |
