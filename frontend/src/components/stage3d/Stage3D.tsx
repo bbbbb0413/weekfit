@@ -18,7 +18,7 @@ export interface Stage3DProps {
   still: boolean;
 }
 
-const TARGET = new THREE.Vector3(0.1, 0.9, 0.4);
+const TARGET = new THREE.Vector3(0.1, 0.82, 0.4);
 const RADIUS = 4.3;
 const EYE = 1.7;
 const MAX_TURN = 0.36;
@@ -103,7 +103,9 @@ export default function Stage3D({ condition, worn, rack, wornIds, onPick, still 
       style={{ touchAction: 'pan-y', cursor: 'grab' }}
       aria-hidden="true"
     >
-      <color attach="background" args={['#bfe3d0']} />
+      <color attach="background" args={['#faf6f1']} />
+      <ambientLight intensity={2.2} />
+      <directionalLight position={[2, 4, 5]} intensity={1.1} />
       <CameraRig still={still} />
       <Room condition={condition} />
       <Outdoors condition={condition} still={still} />

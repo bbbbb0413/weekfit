@@ -149,7 +149,7 @@ function Sun() {
 
   return (
     <group position={[-1.95, 2.3, -6.6]}>
-      <group ref={rays}>
+      <group ref={rays} visible={false}>
         {Array.from({ length: 12 }, (_, i) => (
           <mesh key={i} geometry={ray} rotation-z={(i / 12) * Math.PI * 2}>
             <meshBasicMaterial color="#ffce3a" />

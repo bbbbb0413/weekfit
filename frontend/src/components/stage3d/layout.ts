@@ -12,19 +12,19 @@ export const ROOM = {
 
 export const WINDOW = {
   left: -2.35,
-  right: -0.42,
-  bottom: 0.6,
-  top: 2.62,
+  right: -0.3,
+  bottom: 0.35,
+  top: 2.78,
 };
 
 export const DOLL = {
   x: 0.35,
-  z: 1.35,
+  z: 1.45,
   // 인형 좌표 1 단위의 실제 길이 (키 400 단위 = 1.9)
   unit: 1.9 / 400,
 };
 
-export const INK = '#14213d';
+export const INK = '#3b302d';
 
 interface Mood {
   sky: string;

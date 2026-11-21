@@ -7,7 +7,7 @@ import { DOLL, INK, MOOD, ROOM, WINDOW, dimmed } from './layout';
 import { plankTexture } from './textures';
 
 const HALF_PI = Math.PI / 2;
-const FRAME = 0.09;
+const FRAME = 0.035;
 
 function rect(shape: THREE.Shape | THREE.Path, x0: number, y0: number, x1: number, y1: number) {
   shape.moveTo(x0, y0);
@@ -32,7 +32,7 @@ export function Room({ condition }: { condition: WeatherCondition }) {
   const middleZ = (ROOM.front + ROOM.back) / 2;
 
   const floorMap = useMemo(() => {
-    const texture = plankTexture('#2f7d62', '#276a53');
+    const texture = plankTexture('#e3d5c5', '#d3c2ae');
     texture.repeat.set(ROOM.halfWidth * 2, depth / 2);
     return texture;
   }, [depth]);
@@ -57,13 +57,13 @@ export function Room({ condition }: { condition: WeatherCondition }) {
 
   const colors = useMemo(
     () => ({
-      back: dimmed('#bfe3d0', dim),
-      left: dimmed('#a9d6be', dim),
-      right: dimmed('#b3dcc6', dim),
-      ceiling: dimmed('#e6f3ea', dim),
+      back: dimmed('#faf6f1', dim),
+      left: dimmed('#f1ebe3', dim),
+      right: dimmed('#f5f0e9', dim),
+      ceiling: dimmed('#ffffff', dim),
       floor: dimmed('#ffffff', dim),
-      trim: dimmed('#f6fbf7', dim),
-      trimSide: dimmed('#d9e6df', dim),
+      trim: dimmed('#ffffff', dim),
+      trimSide: dimmed('#e4dcd2', dim),
     }),
     [dim],
   );
@@ -122,19 +122,17 @@ export function Room({ condition }: { condition: WeatherCondition }) {
         <meshBasicMaterial color={INK} />
       </mesh>
       <mesh geometry={frame} position-z={ROOM.back + 0.006}>
-        <meshBasicMaterial attach="material-0" color={colors.trim} />
-        <meshBasicMaterial attach="material-1" color={colors.trimSide} />
+        <meshBasicMaterial attach="material-0" color={INK} />
+        <meshBasicMaterial attach="material-1" color={INK} />
       </mesh>
-      <mesh position={[windowX, windowY, ROOM.back + 0.03]}>
-        <boxGeometry args={[0.035, windowHeight, 0.035]} />
-        <meshBasicMaterial color={INK} />
-      </mesh>
-      <mesh position={[windowX, windowY, ROOM.back + 0.03]}>
-        <boxGeometry args={[windowWidth, 0.035, 0.035]} />
-        <meshBasicMaterial color={INK} />
-      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[windowX + (side * windowWidth) / 6, windowY, ROOM.back + 0.03]}>
+          <boxGeometry args={[0.024, windowHeight, 0.03]} />
+          <meshBasicMaterial color={INK} />
+        </mesh>
+      ))}
       <mesh position={[windowX, WINDOW.bottom - FRAME - 0.035, ROOM.back + 0.13]}>
-        <boxGeometry args={[windowWidth + 0.5, 0.07, 0.26]} />
+        <boxGeometry args={[windowWidth + 0.2, 0.03, 0.2]} />
         <meshBasicMaterial attach="material-0" color={colors.trimSide} />
         <meshBasicMaterial attach="material-1" color={colors.trimSide} />
         <meshBasicMaterial attach="material-2" color={colors.trim} />
@@ -143,23 +141,19 @@ export function Room({ condition }: { condition: WeatherCondition }) {
         <meshBasicMaterial attach="material-5" color={colors.trim} />
       </mesh>
       <mesh position={[windowX, WINDOW.bottom - FRAME - 0.078, ROOM.back + 0.13]}>
-        <boxGeometry args={[windowWidth + 0.52, 0.016, 0.27]} />
+        <boxGeometry args={[windowWidth + 0.2, 0.004, 0.2]} />
         <meshBasicMaterial color={INK} />
       </mesh>
 
       {/* 인형 발밑 러그 */}
       <group position={[DOLL.x, 0, DOLL.z]} rotation-x={-HALF_PI}>
         <mesh position-z={0.003}>
-          <circleGeometry args={[0.74, 48]} />
-          <meshBasicMaterial color={INK} />
+          <circleGeometry args={[0.66, 48]} />
+          <meshBasicMaterial color={colors.trimSide} />
         </mesh>
         <mesh position-z={0.005}>
-          <circleGeometry args={[0.715, 48]} />
+          <circleGeometry args={[0.64, 48]} />
           <meshBasicMaterial color={colors.trim} />
-        </mesh>
-        <mesh position-z={0.007}>
-          <ringGeometry args={[0.55, 0.6, 48]} />
-          <meshBasicMaterial color={dimmed('#ffce3a', dim)} />
         </mesh>
       </group>
     </group>
