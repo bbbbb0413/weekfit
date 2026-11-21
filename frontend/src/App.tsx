@@ -1,6 +1,6 @@
-// 기능: 앱 틀 & 화면 연결. 탭 사이를 전환 효과로 이어 줌
+// 기능: 앱 틀 & 화면 연결. 소개 화면과 앱 사이, 탭 사이를 전환 효과로 이어 줌
 
-import { LazyMotion, MotionConfig, domMax, m } from 'framer-motion';
+import { AnimatePresence, LazyMotion, MotionConfig, domMax, m } from 'framer-motion';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { API_MODE } from './api';
 import { TabBar } from './components/TabBar';
@@ -10,28 +10,39 @@ import { BuyPage } from './pages/BuyPage';
 import { ClosetPage } from './pages/ClosetPage';
 import { TodayPage } from './pages/TodayPage';
 import { WeekPage } from './pages/WeekPage';
+import { WelcomePage, hasVisited } from './pages/WelcomePage';
 
 function Screens() {
   const location = useLocation();
+  const welcome = location.pathname === '/welcome';
 
   return (
-    <div className="app">
-      {API_MODE === 'mock' && <p className="demo-strip">데모 데이터로 보는 중이에요. 변경 내용은 이 브라우저에만 저장돼요.</p>}
-      <main className="app__main">
-        {/* 탭을 옮기면 새 화면이 아래에서 올라오며 나타남 */}
-        <m.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={ENTER}>
-          <Routes location={location}>
-            <Route path="/" element={<TodayPage />} />
-            <Route path="/week" element={<WeekPage />} />
-            <Route path="/closet" element={<ClosetPage />} />
-            <Route path="/buy" element={<BuyPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+    <AnimatePresence mode="wait" initial={false}>
+      {welcome ? (
+        // 소개 화면은 위로 빠지며 사라지고 앱이 이어서 나타남
+        <m.div key="welcome" exit={{ opacity: 0, y: -24 }} transition={ENTER}>
+          <WelcomePage />
         </m.div>
-      </main>
-      <TabBar />
-      <Toast />
-    </div>
+      ) : (
+        <m.div key="app" className="app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={ENTER}>
+          {API_MODE === 'mock' && <p className="demo-strip">데모 데이터로 보는 중이에요. 변경 내용은 이 브라우저에만 저장돼요.</p>}
+          <main className="app__main">
+            {/* 탭을 옮기면 새 화면이 아래에서 올라오며 나타남 */}
+            <m.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={ENTER}>
+              <Routes location={location}>
+                <Route path="/" element={hasVisited() ? <TodayPage /> : <Navigate to="/welcome" replace />} />
+                <Route path="/week" element={<WeekPage />} />
+                <Route path="/closet" element={<ClosetPage />} />
+                <Route path="/buy" element={<BuyPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </m.div>
+          </main>
+          <TabBar />
+          <Toast />
+        </m.div>
+      )}
+    </AnimatePresence>
   );
 }
 
