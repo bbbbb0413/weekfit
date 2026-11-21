@@ -60,6 +60,7 @@ export function ClosetPage() {
       {clothes.isPending && <p className="note">옷장을 여는 중이에요.</p>}
       {clothes.isError && (
         <ModiState
+          pose="sorry"
           title="옷장을 불러오지 못했어요"
           action={
             <button type="button" className="button" onClick={() => clothes.refetch()}>
@@ -73,6 +74,7 @@ export function ClosetPage() {
 
       {clothes.data && closet.length === 0 && (
         <ModiState
+          pose="empty"
           title="아직 등록한 옷이 없어요"
           action={
             <button type="button" className="button button--primary" onClick={() => setAdding(true)}>

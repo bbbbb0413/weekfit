@@ -90,6 +90,7 @@ export function WeekPage() {
       {plan.isPending && <ModiState title="일주일 코디를 짜는 중이에요">일정이 중요한 날부터 옷을 배정하고, 세탁이 필요한 옷은 마르는 시간까지 거꾸로 계산해요.</ModiState>}
       {plan.isError && (
         <ModiState
+          pose="sorry"
           title="주간 계획을 불러오지 못했어요"
           action={
             <button type="button" className="button" onClick={() => plan.refetch()}>

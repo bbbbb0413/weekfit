@@ -58,7 +58,7 @@ export function FindCards({ state, selectedUrl, onSelect }: FindCardsProps) {
   }
   if (state.kind === 'error') {
     return (
-      <ModiState title="제품을 찾지 못했어요">
+      <ModiState pose="sorry" title="제품을 찾지 못했어요">
         {state.message} 아래 쇼핑몰 검색으로 직접 찾아볼 수 있어요.
       </ModiState>
     );

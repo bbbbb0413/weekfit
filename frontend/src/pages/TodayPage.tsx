@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { API_MODE, api } from '../api';
 import type { CalendarEvent, Clothing, OutfitEvaluation, OutfitSlot, WeatherCondition } from '../api/types';
 import logo from '../assets/modi/logo.webp';
-import { ModiNote, ModiState, lookFor, todayLine } from '../components/ModiNote';
+import { ModiNote, ModiState, poseFor, todayLine } from '../components/ModiNote';
 import { OutfitBoard, pieceOf, type Pieces } from '../components/OutfitBoard';
 import { PickSheet } from '../components/PickSheet';
 import { WearSheet } from '../components/WearSheet';
@@ -135,7 +135,7 @@ export function TodayPage() {
 
       {loading && (
         <>
-          <ModiNote look={lookFor(current)}>옷장과 날씨, 일정을 보고 오늘 코디를 고르는 중이에요.</ModiNote>
+          <ModiNote pose="think">옷장과 날씨, 일정을 보고 오늘 코디를 고르는 중이에요.</ModiNote>
           <div className="board board--loading" aria-hidden="true">
             <span className="board__slot board__slot--outer" />
             <span className="board__slot board__slot--top" />
@@ -147,6 +147,7 @@ export function TodayPage() {
 
       {!loading && (clothes.isError || plan.isError) && (
         <ModiState
+          pose="sorry"
           title="코디를 불러오지 못했어요"
           action={
             <button type="button" className="button" onClick={() => (clothes.refetch(), plan.refetch())}>
@@ -160,6 +161,7 @@ export function TodayPage() {
 
       {!loading && !clothes.isError && !plan.isError && closet.length === 0 && (
         <ModiState
+          pose="empty"
           title="옷장이 비어 있어요"
           action={
             <Link className="button button--primary" to="/closet">
@@ -173,7 +175,7 @@ export function TodayPage() {
 
       {!loading && !plan.isError && closet.length > 0 && (
         <>
-          <ModiNote look={lookFor(current)}>{done ? '오늘 코디를 기록했어요. 체감은 다음 추천 두께에 반영돼요.' : custom ? '바꾼 조합으로 다시 살펴봤어요.' : todayLine(current, event)}</ModiNote>
+          <ModiNote pose={done ? 'cheer' : custom ? 'hello' : poseFor(current)}>{done ? '오늘 코디를 기록했어요. 체감은 다음 추천 두께에 반영돼요.' : custom ? '바꾼 조합으로 다시 살펴봤어요.' : todayLine(current, event)}</ModiNote>
 
           <OutfitBoard pieces={pieces} onSlot={setPicking} busy={evaluation.isFetching} />
 

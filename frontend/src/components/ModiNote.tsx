@@ -2,20 +2,14 @@
 
 import type { ReactNode } from 'react';
 import type { CalendarEvent, CurrentWeather } from '../api/types';
-import coat from '../assets/modi/modi-coat.webp';
-import jacket from '../assets/modi/modi-jacket.webp';
-import plain from '../assets/modi/modi-main.webp';
 import { formatTime } from '../lib/date';
+import { Modi, type ModiPose } from './Modi';
 
-export type ModiLook = 'plain' | 'jacket' | 'coat';
-
-const IMAGE: Record<ModiLook, string> = { plain, jacket, coat };
-
-// 날씨에 맞는 모디 옷차림
-export function lookFor(weather: CurrentWeather | undefined): ModiLook {
-  if (!weather) return 'plain';
-  if (weather.condition === 'RAIN' || weather.condition === 'THUNDER' || weather.condition === 'SNOW') return 'coat';
-  return weather.apparentTemperature <= 8 ? 'jacket' : 'plain';
+// 날씨에 맞는 모디 포즈. 비와 눈에는 우산, 쌀쌀하면 움츠린 모습
+export function poseFor(weather: CurrentWeather | undefined): ModiPose {
+  if (!weather) return 'pick';
+  if (weather.condition === 'RAIN' || weather.condition === 'THUNDER' || weather.condition === 'SNOW') return 'rain';
+  return weather.apparentTemperature <= 8 ? 'cold' : 'pick';
 }
 
 export function todayLine(weather: CurrentWeather | undefined, event: CalendarEvent | null): string {
@@ -30,10 +24,10 @@ export function todayLine(weather: CurrentWeather | undefined, event: CalendarEv
   return '오늘 날씨와 평소 차림에 맞춰 골랐어요.';
 }
 
-export function ModiNote({ look = 'plain', children }: { look?: ModiLook; children: ReactNode }) {
+export function ModiNote({ pose = 'pick', children }: { pose?: ModiPose; children: ReactNode }) {
   return (
     <div className="modi-note">
-      <img className="modi-note__face" src={IMAGE[look]} alt="" />
+      <Modi pose={pose} size={52} />
       <p className="modi-note__line">
         <span className="modi-note__name">모디</span>
         {children}
@@ -43,16 +37,16 @@ export function ModiNote({ look = 'plain', children }: { look?: ModiLook; childr
 }
 
 interface ModiStateProps {
-  look?: ModiLook;
+  pose?: ModiPose;
   title: string;
   children?: ReactNode;
   action?: ReactNode;
 }
 
-export function ModiState({ look = 'plain', title, children, action }: ModiStateProps) {
+export function ModiState({ pose = 'think', title, children, action }: ModiStateProps) {
   return (
     <div className="modi-state">
-      <img className="modi-state__face" src={IMAGE[look]} alt="" />
+      <Modi pose={pose} size={120} />
       <p className="modi-state__title">{title}</p>
       {children && <div className="modi-state__body">{children}</div>}
       {action}
