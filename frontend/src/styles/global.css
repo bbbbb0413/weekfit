@@ -185,7 +185,7 @@ a {
 
 .section-title {
   margin: 22px 0 8px;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
 }
 
@@ -373,7 +373,7 @@ a {
 }
 
 .modi-note__line {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.45;
 }
 
@@ -414,7 +414,7 @@ a {
 .modi-state__body {
   max-width: 34ch;
   color: var(--ink-2);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .modi-state .button {
@@ -498,7 +498,22 @@ a {
 }
 
 .band__date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
+}
+
+/* 날씨 기준 위치. 누르면 내 위치와 서울 사이를 바꿈 */
+.band__place {
+  min-height: 24px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .band__now {
@@ -691,25 +706,6 @@ a {
   }
 }
 
-.place-line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--gutter);
-  color: var(--ink-2);
-  font-size: 12px;
-}
-
-.place-line .text-button {
-  min-height: 36px;
-  font-size: 12px;
-}
-
-.place-line + .event-line,
-.place-line + .loading.event-line {
-  padding-top: 4px;
-}
-
 /* 일정이 모호할 때 되묻기 */
 .ask {
   margin: 12px var(--gutter) 0;
@@ -721,6 +717,25 @@ a {
 .ask__question {
   margin-bottom: 10px;
   font-weight: 600;
+}
+
+.sheet__extra {
+  display: grid;
+  gap: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.sheet__extra .text-button {
+  justify-self: start;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.tool > .text-button {
+  justify-self: start;
 }
 
 .board-actions {
@@ -954,7 +969,7 @@ button.board__cell:hover {
   gap: 10px;
   padding: 10px 0;
   border-top: 1px solid var(--line);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .reason dt {
@@ -981,7 +996,7 @@ button.board__cell:hover {
 }
 
 .swap__title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -1005,7 +1020,7 @@ button.board__cell:hover {
   align-items: center;
   justify-content: space-between;
   min-height: 48px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -1129,21 +1144,6 @@ button.board__cell:hover {
 
 /* ---------- 주간 ---------- */
 
-.import-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 8px;
-  margin: -6px var(--gutter) 10px;
-  color: var(--ink-2);
-  font-size: 12px;
-}
-
-.import-line .text-button {
-  min-height: 36px;
-  font-size: 12px;
-}
-
 .laundry {
   margin: 0 var(--gutter);
   padding: 14px 16px;
@@ -1177,7 +1177,7 @@ button.board__cell:hover {
 }
 
 .laundry__items {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .laundry__reason {
@@ -1257,7 +1257,7 @@ button.board__cell:hover {
 
 .day__reason {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .day__tip {
@@ -1378,7 +1378,7 @@ button.board__cell:hover {
 }
 
 .match__name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -1443,7 +1443,7 @@ button.board__cell:hover {
 }
 
 .finds__analysis {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -1510,7 +1510,7 @@ button.board__cell:hover {
 }
 
 .find-card__name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -1671,7 +1671,7 @@ button.board__cell:hover {
   display: grid;
   align-content: start;
   gap: 6px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .facts div {
@@ -1777,7 +1777,7 @@ button.board__cell:hover {
 
 .scale__step {
   padding: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -1835,7 +1835,7 @@ button.board__cell:hover {
   background: var(--ink);
   border-radius: 8px;
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* ---------- 뼈대 화면 & 돌림 표시 ---------- */

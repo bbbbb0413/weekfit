@@ -47,6 +47,7 @@ export function BuyPage() {
   const [links, setLinks] = useState<MallLink[]>([]);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [text, setText] = useState('');
+  const [typing, setTyping] = useState(false);
   // 사진을 바꾼 뒤 늦게 도착한 이전 응답을 버리기 위한 요청 번호
   const requestId = useRef(0);
 
@@ -181,7 +182,12 @@ export function BuyPage() {
           </m.button>
         )}
         {error && <p className="note note--bad">{error}</p>}
-        {!file && (
+        {!file && !typing && (
+          <button type="button" className="text-button" onClick={() => setTyping(true)}>
+            사진 없이 글로 찾기
+          </button>
+        )}
+        {!file && typing && (
           <form
             className="requery"
             onSubmit={(event) => {
@@ -190,8 +196,8 @@ export function BuyPage() {
             }}
           >
             <label className="field">
-              <span className="field__label">사진이 없으면 글로 찾기</span>
-              <input className="input" value={text} maxLength={300} placeholder="네이비 케이블 니트 조끼 비슷한데 더 싼 것" onChange={(e) => setText(e.target.value)} />
+              <span className="field__label">찾는 옷</span>
+              <input autoFocus className="input" value={text} maxLength={300} placeholder="네이비 케이블 니트 조끼 비슷한데 더 싼 것" onChange={(e) => setText(e.target.value)} />
             </label>
             <button type="submit" className="button button--small" disabled={!text.trim() || find.kind === 'loading'}>
               더 싼 제품 찾기

@@ -84,10 +84,12 @@ interface WeatherBandProps {
   date: string;
   weather: CurrentWeather | undefined;
   failed: boolean;
+  // 날짜 옆에 놓는 위치 바꾸기 버튼
+  place?: ReactNode;
   children?: ReactNode;
 }
 
-export function WeatherBand({ date, weather, failed, children }: WeatherBandProps) {
+export function WeatherBand({ date, weather, failed, place, children }: WeatherBandProps) {
   const condition = weather?.condition ?? 'CLOUDY';
   return (
     <section className={`band band--${condition.toLowerCase()}`} aria-label="오늘 날씨">
@@ -97,7 +99,10 @@ export function WeatherBand({ date, weather, failed, children }: WeatherBandProp
         </div>
       )}
       <div className="band__text">
-        <p className="band__date">{date}</p>
+        <p className="band__date">
+          {date}
+          {place}
+        </p>
         {weather ? (
           <p className="band__now">
             <span className="band__temp">{Math.round(weather.temperature)}°</span>

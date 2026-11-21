@@ -18,12 +18,13 @@ import { WeatherBand } from '../components/WeatherBand';
 import { AlertIcon } from '../components/icons';
 import { useClothes, useEvaluation, useEvents, useWearLogs, useWeather, useWeekPlan } from '../hooks/queries';
 import { formatMonthDay, formatTime, today } from '../lib/date';
-import { CONDITION_LABEL, TPO_LABEL, itemLabel, slotOf } from '../lib/labels';
+import { TPO_LABEL, itemLabel, slotOf } from '../lib/labels';
 import { TAP, fadeUp, list, listItem } from '../lib/motion';
 import { place, setPlace } from '../lib/session';
 import { useOutfit, wornIds } from '../store/outfit';
 
 const PREVIEW_ORDER: WeatherCondition[] = ['CLEAR', 'CLOUDY', 'RAIN', 'SNOW', 'FOG', 'THUNDER'];
+const PREVIEW_LABEL: Record<WeatherCondition, string> = { CLEAR: '맑을 때', CLOUDY: '흐릴 때', RAIN: '비 내릴 때', SNOW: '눈 내릴 때', FOG: '안개 낄 때', THUNDER: '천둥 칠 때' };
 
 const GRADE_LABEL: Record<OutfitEvaluation['grade'], string> = {
   GREAT: '이대로 나가도 좋아요',
@@ -178,7 +179,7 @@ export function TodayPage() {
               <option value="">오늘 날씨</option>
               {PREVIEW_ORDER.map((c) => (
                 <option key={c} value={c}>
-                  {CONDITION_LABEL[c]}일 때
+                  {PREVIEW_LABEL[c]}
                 </option>
               ))}
             </select>
@@ -186,13 +187,16 @@ export function TodayPage() {
         )}
       </header>
 
-      <WeatherBand date={formatMonthDay(date)} weather={current} failed={weather.isError} />
-      <p className="place-line">
-        {located ? '내 위치 기준 날씨예요.' : '서울 기준 날씨예요.'}
-        <button type="button" className="text-button" disabled={locating} onClick={toggleLocation}>
-          {locating ? '위치 확인 중' : located ? '서울 기준으로 보기' : '내 위치로 보기'}
-        </button>
-      </p>
+      <WeatherBand
+        date={formatMonthDay(date)}
+        weather={current}
+        failed={weather.isError}
+        place={
+          <button type="button" className="band__place" disabled={locating} aria-label={located ? '내 위치 기준 날씨. 서울 기준으로 바꾸기' : '서울 기준 날씨. 내 위치로 바꾸기'} onClick={toggleLocation}>
+            {locating ? '위치 확인 중' : located ? '내 위치 기준' : '서울 기준'}
+          </button>
+        }
+      />
 
       {events.isPending ? (
         <EventLineSkeleton />
@@ -275,7 +279,7 @@ export function TodayPage() {
               {anchor && (
                 <m.button type="button" className="button button--small" whileTap={TAP} disabled={replanning} onClick={() => replanDay({ anchorItemId: anchor.id })}>
                   {replanning && <Spinner />}
-                  {itemLabel(anchor)}에 맞춰 나머지 다시 고르기
+                  {itemLabel(anchor)}에 맞춰 다시 고르기
                 </m.button>
               )}
               {planned.length > 0 && (

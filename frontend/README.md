@@ -37,7 +37,7 @@ Node 22 기준이다. `npm run build`는 타입 검사 후 `dist/`에 빌드한�
 | 경로 | 화면 | 사용하는 API |
 |---|---|---|
 | `/` | 오늘. 모디가 고른 코디 보드, 점수와 고른 이유(날씨, 일정, 색 조합, 세탁), 칸을 눌러 바꿔 입기, 고른 옷에 맞춰 나머지 다시 추천받기, 일정이 모호할 때 어떤 자리인지 되묻기, 착용 기록과 체감 피드백 | `/api/plans/week`, `/api/plans/day`, `/api/outfits/evaluate`, `/api/wear-logs`, `/api/weather`, `/api/events`, `/api/clothes` |
-| `/week` | 주간. 세탁 할 일(마감 순), 7일 코디, 일정 직접 입력, 캘린더 파일(.ics) 가져오기 | `/api/plans/week`, `/api/events*`, `/api/events/sync`, `/api/laundry` |
+| `/week` | 주간. 세탁 할 일(마감 순), 7일 코디, 일정 추가(직접 입력 또는 캘린더 파일 .ics 가져오기) | `/api/plans/week`, `/api/events*`, `/api/events/sync`, `/api/laundry` |
 | `/closet` | 옷장. 옷 사진 목록, 종류 필터, 옷 등록, 정보 고치기, 상태 변경, 세탁 시작 | `/api/clothes*`, `/api/laundry` |
 | `/buy` | 사기 전에. 사려는 옷 사진 한 장으로 보유 검사를 먼저 하고, 오늘 코디에 넣어 본 뒤, 더 싼 실제 제품(최대 2개)을 찾는다. 사진이 없으면 글로 적어서 찾을 수 있다. 제품 찾기는 20~30초 걸려 단계별 대기 화면을 보여 주고, 쇼핑몰 5곳의 검색 링크를 함께 둔다. AI 제품 찾기는 `mock` 모드에서 쓸 수 없다고 안내한다 | `/api/clothes/similar-check`, `/api/shopping/find`, `/api/shopping/links` |
 
@@ -103,7 +103,7 @@ framer-motion으로 만든 움직임이다. 공통 시간과 가속 값은 `src/
 
 ## 아직 없는 것
 
-- 구글 계정 로그인으로 캘린더를 바로 읽는 기능. 지금은 구글 캘린더나 기기 캘린더에서 내보낸 `.ics` 파일을 주간 화면에서 올리면 `PUT /api/events/sync`로 이번 주 일정을 맞춘다. 반복 일정은 첫 회만 읽는다
+- 구글 계정 로그인으로 캘린더를 바로 읽는 기능. 지금은 구글 캘린더나 기기 캘린더에서 내보낸 `.ics` 파일을 일정 추가 시트에서 올리면 `PUT /api/events/sync`로 이번 주 일정을 맞춘다. 반복 일정은 첫 회만 읽는다
 - 주간 화면의 일정 되묻기. `clarifyQuestion`은 오늘 화면에서만 보여 준다
 
 ## Credits / Licenses
