@@ -123,7 +123,7 @@ cd backend && set -a && . ../.env && set +a && ./gradlew bootRun
 | `AI_PROVIDER` | `anthropic` | `anthropic`, `openai`, `google-genai` 중 하나 |
 | `ANTHROPIC_API_KEY` | 없음 | Claude API 키 |
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | 기본 모델 |
-| `SHOPPING_FIND_MODEL` | 비어 있음 | AI 제품 추천에만 쓸 모델. 비우면 `ANTHROPIC_MODEL`을 쓴다 |
+| `SHOPPING_FIND_MODEL` | `claude-sonnet-5-5` | AI 제품 추천에만 쓸 모델. 빈 값으로 두면 `ANTHROPIC_MODEL`을 쓴다 |
 | `OPENAI_API_KEY`, `GEMINI_API_KEY` | 없음 | 다른 AI 공급자를 쓸 때 입력한다 |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | 로컬 PostgreSQL | 데이터베이스 접속 정보 |
 | `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | 로컬 저장소 | S3 호환 이미지 저장소 |

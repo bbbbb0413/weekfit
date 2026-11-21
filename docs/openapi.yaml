@@ -494,6 +494,38 @@ paths:
                   - properties: { data: { $ref: '#/components/schemas/ShoppingResult' } }
         '400': { $ref: '#/components/responses/BadRequest' }
 
+  /api/shopping/find:
+    post:
+      tags: [shopping]
+      summary: 가성비 제품 찾기(AI 웹 검색)
+      description: |
+        사진이나 텍스트 속 옷과 비슷하면서 더 싼 실제 제품을 최대 2개 찾는다. 쇼핑몰을 두 묶음으로 나눠 동시에 검색하며 20~30초 걸린다.
+        AI 가 실패하거나 제품을 못 찾아도 200 으로 쇼핑몰 검색 링크(fallbackLinks)를 돌려준다. IP 당 시간 10회로 제한한다.
+        같은 사진·텍스트 요청은 30분 동안 캐시한다.
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: image 와 text 중 하나는 있어야 한다
+              properties:
+                image: { type: string, format: binary, description: '옷만 나온 사진이나 상품 캡처. 얼굴이 나오지 않게 한다' }
+                text: { type: string, maxLength: 300, example: '폴로 랄프로렌 케이블 니트 베스트 네이비 비슷한데 더 싼 거' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties: { data: { $ref: '#/components/schemas/FindResult' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
   /api/images/{key}:
     get:
       tags: [images]
@@ -851,6 +883,40 @@ components:
         pairableCount: { type: integer, description: '이 옷과 함께 입을 수 있는 내 옷 수' }
         comment: { type: string }
 
+    FindCategory:
+      type: string
+      enum: [TOP, BOTTOM, OUTER, VEST, SHOES]
+      description: '아바타 합성 위치. VEST·TOP·OUTER 는 몸통, BOTTOM 은 하체, SHOES 는 발'
+    FindItem:
+      type: object
+      properties:
+        name: { type: string }
+        price: { type: integer, description: '원. 검색 시점 가격' }
+        mall: { type: string, example: '무신사' }
+        url: { type: string, format: uri, description: '상품 상세 페이지. 웹 검색 결과에 실제로 있던 주소만 남긴다' }
+        reason: { type: string, example: '폴로 감성 그대로, 가격은 1/9' }
+        size: { type: string, example: '정사이즈' }
+        category: { $ref: '#/components/schemas/FindCategory' }
+        imageUrl: { type: [string, 'null'], format: uri, description: '상품 페이지 og:image. 무신사 등 서버 요청을 막는 곳은 null' }
+        cutoutUrl: { type: [string, 'null'], format: uri, description: '배경 제거 이미지. 아직 지원하지 않아 항상 null' }
+    FindResult:
+      type: object
+      properties:
+        analysis: { type: [string, 'null'], description: '사진·텍스트를 어떻게 읽었는지 한 줄' }
+        searchQuery: { type: [string, 'null'] }
+        original:
+          oneOf:
+            - type: object
+              properties:
+                name: { type: string }
+                price: { type: [integer, 'null'] }
+            - type: 'null'
+          description: '원본 제품. 특정하지 못하면 null'
+        items: { type: array, maxItems: 2, items: { $ref: '#/components/schemas/FindItem' } }
+        fallbackLinks: { type: array, items: { $ref: '#/components/schemas/MallLink' }, description: '쇼핑몰 검색 링크. 검색어가 있으면 항상 채운다' }
+        aiAvailable: { type: boolean, description: 'false 면 AI 호출이 실패했거나 웹 검색을 쓸 수 없는 설정이다. items 는 빈 배열이다' }
+        warnings: { type: array, items: { type: string } }
+        elapsedMs: { type: integer }
     ShoppingMall:
       type: string
       enum: [MUSINSA, ZIGZAG, CM29, WCONCEPT, ELEVENST]
