@@ -12,6 +12,7 @@ import java.util.UUID;
 public class AppUser {
 
     public static final UUID DEMO_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final String GUEST_NAME = "게스트";
     private static final int MAX_BIAS = 2;
 
     @Id
@@ -33,7 +34,7 @@ public class AppUser {
     public static AppUser guest(UUID id) {
         AppUser user = new AppUser();
         user.id = id;
-        user.name = "게스트";
+        user.name = GUEST_NAME;
         user.warmthBias = 0;
         user.createdAt = Instant.now();
         return user;
