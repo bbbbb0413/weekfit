@@ -172,7 +172,13 @@ export function WeekPage() {
               />
             ))}
           </ol>
-          <p className="source-line">{data.aiAvailable ? 'AI와 규칙으로 짠 계획이에요.' : 'AI 연결 없이 규칙으로 짠 계획이에요. 설명도 규칙 문장이에요.'}</p>
+          <p className="source-line">
+            {data.explanationPending
+              ? '코디는 바로 짰고, AI가 설명을 다듬는 중이에요. 잠시 뒤 자동으로 바뀌어요.'
+              : data.aiAvailable
+                ? 'AI와 규칙으로 짠 계획이에요.'
+                : 'AI 연결 없이 규칙으로 짠 계획이에요. 설명도 규칙 문장이에요.'}
+          </p>
         </>
       )}
 

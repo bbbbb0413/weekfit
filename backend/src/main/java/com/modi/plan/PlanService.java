@@ -47,13 +47,15 @@ public class PlanService {
         List<ClothingItem> items = clothingRepository.findByUserIdOrderByCreatedAtDesc(userId);
         DayContextFactory.Built built = contextFactory.build(userId, start, WEEK, lat, lon, null, null);
         WeeklyPlanner.Result result = planner.plan(built.days(), items.stream().map(Garment::of).toList(), now);
-        PlanExplainer.Explanations texts = explainer.explain(result.days(), result.laundryTasks());
+        // 코디는 바로 돌려주고 AI 설명은 백그라운드에서 만든다. 일정·옷이 바뀐 직후에도 화면이 기다리지 않게 한다
+        PlanExplainer.Explanations texts = explainer.explainInBackground(result.days(), result.laundryTasks());
 
         Map<UUID, ClothingItem> byId = index(items);
         List<PlanResponses.DayPlan> days = result.days().stream()
                 .map(d -> toDayPlan(d, texts.byDate().get(d.context().date()), byId, now, built.notices()))
                 .toList();
-        return new PlanResponses.WeekPlan(start, days, result.laundryTasks(), result.conflicts(), texts.aiAvailable());
+        return new PlanResponses.WeekPlan(start, days, result.laundryTasks(), result.conflicts(), texts.aiAvailable(),
+                texts.pending());
     }
 
     @Transactional(readOnly = true)

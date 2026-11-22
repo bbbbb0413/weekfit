@@ -34,7 +34,51 @@ class PlanExplainerCacheTest {
 
     @BeforeEach
     void setUp() {
-        explainer = new PlanExplainer(chatClient, new ByteArrayResource("system".getBytes()), clock);
+        // 백그라운드 작업을 호출 스레드에서 바로 실행해 순서를 고정한다
+        explainer = new PlanExplainer(chatClient, new ByteArrayResource("system".getBytes()), clock, Runnable::run);
+    }
+
+    @Test
+    void backgroundReturnsTemplatesFirstThenAiText() {
+        answer("AI가 쓴 설명");
+
+        PlanExplainer.Explanations first = explainer.explainInBackground(List.of(day(5)), List.of());
+        PlanExplainer.Explanations second = explainer.explainInBackground(List.of(day(5)), List.of());
+
+        assertThat(first.pending()).isTrue();
+        assertThat(first.aiAvailable()).isFalse();
+        assertThat(first.byDate().get(DAY).reason()).isNotEqualTo("AI가 쓴 설명");
+        assertThat(second.pending()).isFalse();
+        assertThat(second.aiAvailable()).isTrue();
+        assertThat(second.byDate().get(DAY).reason()).isEqualTo("AI가 쓴 설명");
+        verify(chatClient, times(1)).prompt();
+    }
+
+    @Test
+    void backgroundRunsOncePerInputWhileInFlight() {
+        answer("AI가 쓴 설명");
+        java.util.List<Runnable> queued = new java.util.ArrayList<>();
+        PlanExplainer deferred = new PlanExplainer(chatClient, new ByteArrayResource("system".getBytes()), clock, queued::add);
+
+        deferred.explainInBackground(List.of(day(5)), List.of());
+        deferred.explainInBackground(List.of(day(5)), List.of());
+
+        assertThat(queued).hasSize(1);
+    }
+
+    @Test
+    void backgroundFailureBacksOffBeforeRetrying() {
+        answer(null);
+
+        explainer.explainInBackground(List.of(day(5)), List.of());
+        PlanExplainer.Explanations afterFailure = explainer.explainInBackground(List.of(day(5)), List.of());
+        assertThat(afterFailure.pending()).isFalse();
+        assertThat(afterFailure.aiAvailable()).isFalse();
+        verify(chatClient, times(1)).prompt();
+
+        clock.advance(PlanExplainer.FAILURE_BACKOFF.plusSeconds(1));
+        explainer.explainInBackground(List.of(day(5)), List.of());
+        verify(chatClient, times(2)).prompt();
     }
 
     @Test

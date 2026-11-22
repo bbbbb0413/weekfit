@@ -39,6 +39,8 @@ public final class PlanResponses {
             List<DayPlan> days,
             List<LaundryTask> laundryTasks,
             List<String> conflicts,
-            boolean aiAvailable) {
+            boolean aiAvailable,
+            /** true 면 설명이 아직 규칙 문장이고 AI 설명을 만드는 중이다. 잠시 뒤 다시 조회하면 채워진다 */
+            boolean explanationPending) {
     }
 }

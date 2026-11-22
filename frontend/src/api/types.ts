@@ -199,6 +199,8 @@ export interface WeekPlan {
   laundryTasks: LaundryTask[];
   conflicts: string[];
   aiAvailable: boolean;
+  /** true 면 설명이 아직 규칙 문장이고 서버가 AI 설명을 만드는 중. 잠시 뒤 다시 조회하면 채워짐 */
+  explanationPending?: boolean;
 }
 
 export interface EvaluationCheck {

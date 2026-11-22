@@ -23,8 +23,15 @@ export function useEvents(from: string, to: string) {
   return useQuery({ queryKey: keys.events(from, to), queryFn: () => api.listEvents(from, to) });
 }
 
+// 서버가 AI 설명을 아직 만드는 중이면(explanationPending) 코디는 먼저 보여 주고 설명이 채워질 때까지 다시 물어봄
+const EXPLANATION_POLL_MS = 5_000;
+
 export function useWeekPlan(start: string) {
-  return useQuery({ queryKey: keys.weekPlan(start), queryFn: () => api.weekPlan(start) });
+  return useQuery({
+    queryKey: keys.weekPlan(start),
+    queryFn: () => api.weekPlan(start),
+    refetchInterval: (query) => (query.state.data?.explanationPending ? EXPLANATION_POLL_MS : false),
+  });
 }
 
 // 보드에 올린 옷이 바뀔 때마다 다시 평가. 새 점수가 올 때까지 이전 점수 유지
