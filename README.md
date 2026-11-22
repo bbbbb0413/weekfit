@@ -148,8 +148,8 @@ cd backend && set -a && . ../.env && set +a && ./gradlew bootRun
 웹 화면은 Vercel, API 서버는 Render, 데이터베이스와 이미지 저장소는 Supabase를 기준으로 한다.
 
 1. **Supabase**
-   - 프로젝트를 만든다(리전은 서울 `ap-northeast-2`).
-   - Storage에서 비공개 버킷 `clothes`를 만들고, Storage > S3 Configuration에서 액세스 키를 발급한다.
+   - 프로젝트를 만든다. 리전은 한국에서 가까운 서울(`ap-northeast-2`)이나 도쿄(`ap-northeast-1`)를 고르고, `STORAGE_REGION`에 같은 값을 넣는다.
+   - Storage에서 비공개 버킷 `modi`를 만들고, Storage > S3 Configuration에서 액세스 키를 발급한다.
    - 데이터베이스는 Connect > Session pooler의 접속 정보를 쓴다. 직접 연결 주소는 IPv6 전용이라 Render에서 접속하지 못한다.
 2. **Render**
    - New > Blueprint에서 이 저장소를 고르면 `render.yaml`에 적힌 API 서버가 만들어진다.

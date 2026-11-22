@@ -1,0 +1,11 @@
+# 로컬 API 서버를 Supabase(DB·Storage)에 붙여 띄운다. 접속 정보는 .env.supabase(커밋하지 않음)에 둔다.
+# docker compose --env-file .env.supabase -f docker-compose.yml -f docker-compose.supabase.yml --profile app up -d --build backend frontend
+services:
+  backend:
+    env_file:
+      - .env
+      - .env.supabase
+    environment:
+      # 기본 compose 의 로컬 컨테이너 주소를 Supabase 주소로 덮어쓴다
+      DB_URL: ${DB_URL:?DB_URL 이 .env.supabase 에 없습니다}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT 가 .env.supabase 에 없습니다}
