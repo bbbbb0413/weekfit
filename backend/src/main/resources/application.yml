@@ -51,6 +51,9 @@ modi:
   rate-limit:
     ai-requests-per-hour: ${AI_RATE_LIMIT_PER_HOUR:60}
     find-requests-per-hour: ${FIND_RATE_LIMIT_PER_HOUR:10}
+  weather:
+    # MET Norway 이용 약관: 앱 이름과 연락처(사이트 주소 등)를 User-Agent 에 넣는다
+    user-agent: ${WEATHER_USER_AGENT:modi/1.0 https://modi-api-ch95.onrender.com}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   storage:

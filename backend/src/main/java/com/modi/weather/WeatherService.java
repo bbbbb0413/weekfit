@@ -23,11 +23,11 @@ public class WeatherService {
     private static final int HOURS = 24;
     private static final ZoneOffset OFFSET = ZoneOffset.ofHours(9);
 
-    private final OpenMeteoClient client;
+    private final ForecastSource client;
     private final Clock clock;
     private final Map<String, Cached> cache = new ConcurrentHashMap<>();
 
-    public WeatherService(OpenMeteoClient client, Clock clock) {
+    public WeatherService(ForecastSource client, Clock clock) {
         this.client = client;
         this.clock = clock;
     }

@@ -4,6 +4,7 @@ import com.modi.common.error.ExternalServiceException;
 import java.time.Duration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -41,8 +42,17 @@ class OpenMeteoClient {
                 throw new ExternalServiceException("날씨 정보를 불러오지 못했습니다.");
             }
             return response;
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            throw new RateLimitedException(e);
         } catch (RestClientException e) {
             throw new ExternalServiceException("날씨 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", e);
+        }
+    }
+
+    /** Open-Meteo 일일 요청 한도 초과(429). 다른 출처로 대신할 수 있게 따로 구분한다. */
+    static final class RateLimitedException extends ExternalServiceException {
+        RateLimitedException(Throwable cause) {
+            super("날씨 정보 요청 한도를 넘었습니다. 잠시 후 다시 시도해 주세요.", cause);
         }
     }
 }
