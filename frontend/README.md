@@ -23,12 +23,14 @@ Node 22 기준이다. `npm run build`는 타입 검사 후 `dist/`에 빌드한�
 
 | `VITE_API_MODE` | 동작 |
 |---|---|
-| `mock` (기본) | 백엔드 없이 브라우저 안의 데모 데이터로 동작한다. 옷장은 백엔드 `DemoClosetSeed`와 같은 17벌이고, 변경 내용은 localStorage에 저장된다. 날씨는 Open-Meteo를 직접 조회하고 실패하면 예시 예보를 쓴다 |
-| `real` | `VITE_API_BASE_URL`(기본 `http://localhost:8080`)의 백엔드를 호출한다 |
+| `mock` (개발 서버 기본) | 백엔드 없이 브라우저 안의 데모 데이터로 동작한다. 옷장은 백엔드 `DemoClosetSeed`와 같은 17벌이고, 변경 내용은 localStorage에 저장된다. 날씨는 Open-Meteo를 직접 조회하고 실패하면 예시 예보를 쓴다 |
+| `real` (배포 빌드 기본) | `VITE_API_BASE_URL`(기본 `http://localhost:8080`)의 백엔드를 호출한다 |
 
 `real` 모드에서 일정, 주간 계획, 옷 평가 엔드포인트가 404를 주면(백엔드가 해당 기능 없이 떠 있는 경우), 같은 응답 형식의 브라우저 규칙 계산(`src/api/local/engine.ts`)으로 대신한다. 엔드포인트가 응답하면 서버 결과를 그대로 쓴다. 보유 검사는 사진 분석이 필요해 `mock` 모드에서는 예시 결과임을 화면에 표시하고, AI 제품 찾기는 쓸 수 없다고 안내한다. 쇼핑몰 링크는 백엔드와 같은 규칙(`src/api/local/shopping.ts`)으로 만들어 `mock` 모드에서도 검색어를 고치면 실제 검색 결과로 연결된다.
 
-브라우저마다 UUID를 한 번 만들어 localStorage에 두고 모든 요청에 `X-User-Id` 헤더로 보낸다. 그래서 접속자마다 옷장이 따로다. 시연처럼 백엔드의 데모 사용자(옷 17벌)를 함께 써야 할 때는 `.env.local`에 `VITE_SHARED_DEMO_USER=true`를 넣으면 헤더를 보내지 않는다.
+브라우저마다 UUID를 한 번 만들어 localStorage에 두고 모든 요청에 `X-User-Id` 헤더로 보낸다. 그래서 접속자마다 옷장이 따로다. 시연처럼 백엔드의 데모 사용자(옷 17벌)를 함께 써야 할 때는 `.env.local`에 `VITE_SHARED_DEMO_USER=true`를 넣으면 헤더를 보내지 않는다. `npm run build`로 만든 배포 빌드는 이 값이 없으면 `true`로 동작하고, 접속자마다 옷장을 나누려면 `false`를 넣는다.
+
+Vercel에 배포할 때는 Root Directory를 `frontend`로 두고 `VITE_API_BASE_URL`에 API 서버 주소를 넣는다. `vercel.json`이 모든 경로를 `index.html`로 보낸다.
 
 날씨와 추천은 서울 기준이고, 오늘 화면에서 "내 위치로 보기"를 누르면 브라우저 위치 권한을 받아 `lat`, `lon`을 함께 보낸다. 좌표는 소수 둘째 자리까지만 보관한다.
 

@@ -20,12 +20,15 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(properties.allowedOrigins().toArray(String[]::new))
+                .allowedOriginPatterns(properties.allowedOrigins().stream().map(String::trim).toArray(String[]::new))
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*");
     }
 
-    /** 프론트 배포 도메인. 쉼표로 여러 개 지정한다. */
+    /**
+     * 프론트 배포 도메인. 쉼표로 여러 개 지정하고, Vercel 미리보기 주소처럼
+     * https://weekfit-*.vercel.app 형태의 패턴도 쓸 수 있다.
+     */
     @ConfigurationProperties(prefix = "weekfit.cors")
     public record CorsProperties(List<String> allowedOrigins) {
     }

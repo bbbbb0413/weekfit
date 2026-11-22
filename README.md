@@ -126,9 +126,46 @@ cd backend && set -a && . ../.env && set +a && ./gradlew bootRun
 | `SHOPPING_FIND_MODEL` | `claude-sonnet-5-5` | AI 제품 추천에만 쓸 모델. 빈 값으로 두면 `ANTHROPIC_MODEL`을 쓴다 |
 | `OPENAI_API_KEY`, `GEMINI_API_KEY` | 없음 | 다른 AI 공급자를 쓸 때 입력한다 |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | 로컬 PostgreSQL | 데이터베이스 접속 정보 |
+| `DB_POOL_SIZE` | `5` | 데이터베이스 최대 연결 수 |
 | `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | 로컬 저장소 | S3 호환 이미지 저장소 |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | API 호출을 허용할 웹 주소 |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | API 호출을 허용할 웹 주소. 쉼표로 여러 개를 쓰고, `https://weekfit-*.vercel.app` 같은 패턴도 쓸 수 있다 |
+| `JAVA_OPTS` | 메모리 512MB 기준 값 | 컨테이너에서 실행할 때의 JVM 옵션 |
 | `AI_RATE_LIMIT_PER_HOUR` | `60` | AI 호출 API의 IP당 시간 한도 |
 | `FIND_RATE_LIMIT_PER_HOUR` | `10` | AI 제품 추천의 IP당 시간 한도 |
 | `DEMO_SEED` | `true` | 데모 데이터 시드 여부 |
 | `PORT` | `8080` | 서버 포트 |
+
+웹 화면은 빌드할 때 아래 값을 읽는다.
+
+| 이름 | 개발 서버 기본값 | 배포 빌드 기본값 | 설명 |
+|---|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8080` | `http://localhost:8080` | API 서버 주소. 배포할 때는 반드시 넣는다 |
+| `VITE_API_MODE` | `mock` | `real` | `mock`은 API 서버 없이 브라우저 안의 데모 데이터로 동작한다 |
+| `VITE_SHARED_DEMO_USER` | `false` | `true` | `true`면 모든 접속자가 데모 사용자의 옷장(17벌)을 함께 쓰고, `false`면 브라우저마다 빈 옷장에서 시작한다 |
+
+## 배포
+
+웹 화면은 Vercel, API 서버는 Render, 데이터베이스와 이미지 저장소는 Supabase를 기준으로 한다.
+
+1. **Supabase**
+   - 프로젝트를 만든다(리전은 서울 `ap-northeast-2`).
+   - Storage에서 비공개 버킷 `clothes`를 만들고, Storage > S3 Configuration에서 액세스 키를 발급한다.
+   - 데이터베이스는 Connect > Session pooler의 접속 정보를 쓴다. 직접 연결 주소는 IPv6 전용이라 Render에서 접속하지 못한다.
+2. **Render**
+   - New > Blueprint에서 이 저장소를 고르면 `render.yaml`에 적힌 API 서버가 만들어진다.
+   - 비밀값은 대시보드에서 입력한다.
+
+   | 이름 | 값 |
+   |---|---|
+   | `DB_URL` | `jdbc:postgresql://<pooler 주소>:5432/postgres?sslmode=require` |
+   | `DB_USERNAME` | `postgres.<project-ref>` |
+   | `STORAGE_ENDPOINT` | `https://<project-ref>.storage.supabase.co/storage/v1/s3` |
+   | `CORS_ALLOWED_ORIGINS` | Vercel 배포 주소 |
+
+   테이블은 서버가 처음 뜰 때 Flyway가 만든다.
+3. **Vercel**
+   - Root Directory를 `frontend`로 지정한다.
+   - 환경 변수 `VITE_API_BASE_URL`에 Render 서버 주소를 넣는다.
+   - 다른 경로로 바로 들어와도 화면이 열리도록 `frontend/vercel.json`이 모든 경로를 `index.html`로 보낸다.
+
+Render 무료 인스턴스는 15분 동안 요청이 없으면 잠든다. 메모리 512MB, CPU 0.1로 제한한 컨테이너에서 서버 기동에 164초가 걸렸고 메모리는 379MB를 썼다. 시연 전에는 외부 모니터링 서비스로 `/actuator/health`를 10분마다 호출해 깨워 둔다.

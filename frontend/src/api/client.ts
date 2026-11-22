@@ -2,10 +2,14 @@
 
 import { userId } from '../lib/session';
 
-export const API_MODE: 'mock' | 'real' = import.meta.env.VITE_API_MODE === 'real' ? 'real' : 'mock';
+// 환경 변수가 없으면 개발 서버는 mock·개인 옷장, 배포 빌드는 real·데모 옷장 공유로 동작
+const IS_BUILD = import.meta.env.PROD;
+const flag = (value: string | undefined, fallback: boolean) => (value === undefined || value === '' ? fallback : value === 'true');
+
+export const API_MODE: 'mock' | 'real' = (import.meta.env.VITE_API_MODE || (IS_BUILD ? 'real' : 'mock')) === 'real' ? 'real' : 'mock';
 // true 면 X-User-Id 를 보내지 않아 모든 접속자가 백엔드의 데모 사용자 옷장을 함께 씀
-export const SHARED_DEMO_USER = import.meta.env.VITE_SHARED_DEMO_USER === 'true';
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
+export const SHARED_DEMO_USER = flag(import.meta.env.VITE_SHARED_DEMO_USER, IS_BUILD);
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
 
 export class ApiError extends Error {
   constructor(

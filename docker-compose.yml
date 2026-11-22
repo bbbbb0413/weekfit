@@ -1,5 +1,5 @@
 # 로컬 개발용 의존 서비스: Postgres + SeaweedFS(S3 호환) + 시드 이미지 업로드
-# 백엔드까지 컨테이너로 띄우려면: docker compose --profile app up -d --build
+# API 서버(8080)와 웹 화면(5173)까지 컨테이너로 띄우려면: docker compose --profile app up -d --build
 services:
   postgres:
     image: postgres:17.11-alpine
@@ -50,6 +50,19 @@ services:
         condition: service_healthy
       seaweedfs:
         condition: service_started
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      args:
+        # 브라우저가 호출하는 주소라 컨테이너 이름이 아니라 호스트 주소를 쓴다
+        VITE_API_BASE_URL: http://localhost:8080
+        VITE_SHARED_DEMO_USER: "true"
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 
 volumes:
   pg-data:
