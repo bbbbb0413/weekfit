@@ -1,5 +1,6 @@
 // 기능: 백엔드 호출 공통 처리 (사용자 식별 헤더, 응답 envelope 해제, 오류 변환)
 
+import { markAwake, watchSlow } from '../lib/serverWake';
 import { userId } from '../lib/session';
 
 // 환경 변수가 없으면 개발 서버는 mock·개인 옷장, 배포 빌드는 real·데모 옷장 공유로 동작
@@ -15,6 +16,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    // 서버가 깨어나는 중이라 생긴 오류로 보이면 true
+    readonly cold = false,
   ) {
     super(message);
   }
@@ -37,7 +40,34 @@ const STATUS_MESSAGE: Record<number, string> = {
   503: '외부 서비스가 잠시 응답하지 않아요. 조금 뒤에 다시 시도해 주세요.',
 };
 
+// 서버가 깨어나는 동안 게이트웨이가 본문 없이 돌려주는 상태. 0 은 연결 실패
+const COLD_STATUSES = new Set([0, 502, 503, 504]);
+const COLD_RETRY_MS = 5_000;
+const COLD_RETRY_LIMIT_MS = 180_000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// 서버가 아직 깨어나는 중이면 조회 요청은 잠시 뒤 다시 보냄. 저장 요청은 중복될 수 있어 다시 보내지 않음
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const retriable = (init.method ?? 'GET').toUpperCase() === 'GET';
+  const startedAt = Date.now();
+  const stopWatch = watchSlow();
+  try {
+    for (;;) {
+      try {
+        return await attempt<T>(path, init);
+      } catch (e) {
+        const cold = e instanceof ApiError && e.cold;
+        if (!retriable || !cold || Date.now() - startedAt + COLD_RETRY_MS > COLD_RETRY_LIMIT_MS) throw e;
+        await sleep(COLD_RETRY_MS);
+      }
+    }
+  } finally {
+    stopWatch();
+  }
+}
+
+async function attempt<T>(path: string, init: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -49,7 +79,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
       },
     });
   } catch {
-    throw new ApiError('서버에 연결하지 못했어요. 백엔드가 켜져 있는지 확인해 주세요.', 0);
+    throw new ApiError('서버에 연결하지 못했어요. 백엔드가 켜져 있는지 확인해 주세요.', 0, true);
   }
 
   let envelope: Envelope<T> | null = null;
@@ -59,9 +89,11 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     // 본문이 없는 오류 응답
   }
 
+  // 우리 서버가 만든 응답(envelope)이 왔으면 서버는 깨어 있음
+  if (envelope) markAwake();
   if (!response.ok || !envelope?.success) {
     const message = envelope?.error ?? STATUS_MESSAGE[response.status] ?? '요청을 처리하지 못했어요.';
-    throw new ApiError(message, response.status);
+    throw new ApiError(message, response.status, !envelope && COLD_STATUSES.has(response.status));
   }
   return envelope.data;
 }

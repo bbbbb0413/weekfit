@@ -117,6 +117,11 @@ public class PlanExplainer {
         return new Explanations(fallback, false, true);
     }
 
+    /** 계획이 곧 바뀔 때 쓴다. AI 를 부르지 않고 규칙 문장을 돌려주며, 화면이 다시 묻도록 pending 으로 표시한다. */
+    public Explanations deferred(List<WeeklyPlanner.DayResult> days) {
+        return new Explanations(templates(days), false, true);
+    }
+
     private void generate(String key, String plan, Map<LocalDate, Text> fallback) {
         try {
             Map<LocalDate, Text> aiTexts = askAi(plan, fallback);

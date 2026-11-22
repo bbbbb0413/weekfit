@@ -22,11 +22,14 @@ public class ScheduleService {
 
     private final CalendarEventRepository repository;
     private final EventAnalyzer analyzer;
+    private final EventAnalysisWorker analysisWorker;
     private final Clock clock;
 
-    public ScheduleService(CalendarEventRepository repository, EventAnalyzer analyzer, Clock clock) {
+    public ScheduleService(CalendarEventRepository repository, EventAnalyzer analyzer,
+            EventAnalysisWorker analysisWorker, Clock clock) {
         this.repository = repository;
         this.analyzer = analyzer;
+        this.analysisWorker = analysisWorker;
         this.clock = clock;
     }
 
@@ -89,9 +92,11 @@ public class ScheduleService {
     public CalendarEventResponse create(UUID userId, EventInput in) {
         Instant now = clock.instant();
         Masked m = mask(in);
-        EventAnalysis analysis = analyzer.analyze(List.of(m.toInput(in))).getFirst();
+        // 규칙 분석으로 먼저 저장해 바로 응답하고, AI 분석은 커밋 뒤 백그라운드에서 덮어쓴다
+        EventAnalysis rules = RuleBasedEventClassifier.classify(m.title(), m.location());
         CalendarEvent saved = repository.save(CalendarEvent.create(userId, null, m.title(), m.location(),
-                m.startsAt(), m.endsAt(), analysis, now));
+                m.startsAt(), m.endsAt(), rules, now));
+        analysisWorker.analyzeAfterCommit(saved.getId(), m.toInput(in));
         return CalendarEventResponse.of(saved);
     }
 

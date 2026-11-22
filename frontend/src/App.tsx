@@ -7,6 +7,7 @@ import { API_MODE } from './api';
 import { Splash } from './components/Splash';
 import { TabBar } from './components/TabBar';
 import { Toast } from './components/Toast';
+import { WakeBanner } from './components/WakeBanner';
 import { ENTER } from './lib/motion';
 import { BuyPage } from './pages/BuyPage';
 import { ClosetPage } from './pages/ClosetPage';
@@ -49,6 +50,8 @@ export function App() {
           {/* 스플래시가 떠 있는 동안 아래에서 첫 화면이 데이터를 불러옴 */}
           <Screens />
           <AnimatePresence>{splash && <Splash key="splash" onDone={closeSplash} />}</AnimatePresence>
+          {/* 스플래시 위에도 보이도록 마지막에 둠 */}
+          <WakeBanner />
         </MotionConfig>
       </LazyMotion>
     </BrowserRouter>

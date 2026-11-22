@@ -1,10 +1,10 @@
 // 기능: 살까 말까. 사려는 옷 사진 한 장으로 보유 검사, 내 옷과 맞춰 보기, 더 싼 제품 찾기
 
 import { AnimatePresence, m } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { api } from '../api';
-import type { Category, ClothingSuggestion, FindCategory, FindItem, MallLink, OutfitSlot, SimilarCheckResult, Sourced } from '../api/types';
-import { FindCards, type FindState } from '../components/FindCards';
+import type { Category, ClothingSuggestion, FindCategory, OutfitSlot, SimilarCheckResult } from '../api/types';
+import { FindCards } from '../components/FindCards';
 import { ItemFigure } from '../components/ItemFigure';
 import { OutfitBoard, piecesOf, type Piece, type Pieces } from '../components/OutfitBoard';
 import { ModiNote } from '../components/ModiNote';
@@ -12,13 +12,14 @@ import { PhotoPicker } from '../components/PhotoPicker';
 import { ResultSkeleton, Spinner } from '../components/Skeleton';
 import { SearchIcon } from '../components/icons';
 import { useWeekPlan } from '../hooks/queries';
+import { buyRequestId, useBuyField, type BuyMode } from '../lib/buyStore';
 import { today } from '../lib/date';
 import { CATEGORY_LABEL, SLOT_LABEL, itemLabel } from '../lib/labels';
 import { QUICK, SNAPPY, TAP, fadeUp, list, listItem } from '../lib/motion';
 
 const MAX_QUERY = 50;
 
-type Mode = 'photo' | 'text';
+type Mode = BuyMode;
 const MODES: Array<[Mode, string]> = [
   ['photo', '사진으로'],
   ['text', '글로'],
@@ -44,21 +45,21 @@ function queryOf(attributes: ClothingSuggestion): string {
 
 export function BuyPage() {
   const plan = useWeekPlan(today());
-  const [file, setFile] = useState<File | null>(null);
+  // 다른 탭을 다녀와도 남도록 화면 밖 저장소에 둠 (lib/buyStore)
+  const [file, setFile] = useBuyField('file');
   const [preview, setPreview] = useState<string | null>(null);
-  const [check, setCheck] = useState<Sourced<SimilarCheckResult> | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [find, setFind] = useState<FindState>({ kind: 'idle' });
-  const [chosen, setChosen] = useState<FindItem | null>(null);
-  const [query, setQuery] = useState('');
-  const [linkedQuery, setLinkedQuery] = useState('');
-  const [links, setLinks] = useState<MallLink[]>([]);
-  const [linkError, setLinkError] = useState<string | null>(null);
-  const [text, setText] = useState('');
-  const [mode, setMode] = useState<Mode>('photo');
-  // 사진을 바꾼 뒤 늦게 도착한 이전 응답을 버리기 위한 요청 번호
-  const requestId = useRef(0);
+  const [check, setCheck] = useBuyField('check');
+  const [checking, setChecking] = useBuyField('checking');
+  const [error, setError] = useBuyField('error');
+  const [find, setFind] = useBuyField('find');
+  const [chosen, setChosen] = useBuyField('chosen');
+  const [query, setQuery] = useBuyField('query');
+  const [linkedQuery, setLinkedQuery] = useBuyField('linkedQuery');
+  const [links, setLinks] = useBuyField('links');
+  const [linkError, setLinkError] = useBuyField('linkError');
+  const [text, setText] = useBuyField('text');
+  const [mode, setMode] = useBuyField('mode');
+  const requestId = buyRequestId;
 
   useEffect(() => {
     if (!file) {

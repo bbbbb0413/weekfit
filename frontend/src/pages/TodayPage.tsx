@@ -70,6 +70,13 @@ export function TodayPage() {
   const planned = useMemo(() => day?.outfit?.items.map((entry) => entry.item) ?? [], [day]);
   const plannedKey = planned.map((item) => item.id).join();
 
+  // 일정이나 옷장 내용이 바뀌면 예전 조건으로 받은 재추천과 옷차림 선택을 버리고 새 주간 계획을 따름
+  // (react-query 는 내용이 같으면 data 참조를 유지하므로 다시 조회만 해서는 초기화되지 않음)
+  useEffect(() => {
+    setReplan(null);
+    setTpoChoice(null);
+  }, [events.data, clothes.data]);
+
   // 직접 바꾸기 전까지는 추천 코디를 따라감
   useEffect(() => {
     if (!custom && plannedKey) follow(planned);

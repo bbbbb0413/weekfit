@@ -4,6 +4,7 @@ import com.modi.closet.ClothingItem;
 import com.modi.closet.ClothingRepository;
 import com.modi.closet.ClothingResponse;
 import com.modi.common.error.NotFoundException;
+import com.modi.schedule.EventAnalysisWorker;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -29,15 +30,17 @@ public class PlanService {
     private final WeeklyPlanner planner;
     private final OutfitSelector selector;
     private final PlanExplainer explainer;
+    private final EventAnalysisWorker analysisWorker;
     private final Clock clock;
 
     public PlanService(ClothingRepository clothingRepository, DayContextFactory contextFactory, WeeklyPlanner planner,
-            OutfitSelector selector, PlanExplainer explainer, Clock clock) {
+            OutfitSelector selector, PlanExplainer explainer, EventAnalysisWorker analysisWorker, Clock clock) {
         this.clothingRepository = clothingRepository;
         this.contextFactory = contextFactory;
         this.planner = planner;
         this.selector = selector;
         this.explainer = explainer;
+        this.analysisWorker = analysisWorker;
         this.clock = clock;
     }
 
@@ -47,8 +50,12 @@ public class PlanService {
         List<ClothingItem> items = clothingRepository.findByUserIdOrderByCreatedAtDesc(userId);
         DayContextFactory.Built built = contextFactory.build(userId, start, WEEK, lat, lon, null, null);
         WeeklyPlanner.Result result = planner.plan(built.days(), items.stream().map(Garment::of).toList(), now);
-        // 코디는 바로 돌려주고 AI 설명은 백그라운드에서 만든다. 일정·옷이 바뀐 직후에도 화면이 기다리지 않게 한다
-        PlanExplainer.Explanations texts = explainer.explainInBackground(result.days(), result.laundryTasks());
+        // 코디는 바로 돌려주고 AI 설명은 백그라운드에서 만든다. 일정·옷이 바뀐 직후에도 화면이 기다리지 않게 한다.
+        // 방금 추가한 일정을 AI 가 아직 분석 중이면 코디가 곧 바뀌므로, 지금 계획으로 설명을 만들지 않는다
+        List<UUID> eventIds = built.days().stream().flatMap(d -> d.events().stream()).map(DayContext.EventRef::id).toList();
+        PlanExplainer.Explanations texts = analysisWorker.anyPending(eventIds)
+                ? explainer.deferred(result.days())
+                : explainer.explainInBackground(result.days(), result.laundryTasks());
 
         Map<UUID, ClothingItem> byId = index(items);
         List<PlanResponses.DayPlan> days = result.days().stream()
