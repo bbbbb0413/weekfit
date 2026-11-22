@@ -23,8 +23,8 @@ const MODES: Array<[Mode, string]> = [
   ['photo', '사진으로'],
   ['text', '글로'],
 ];
-// 눌러서 바로 채우는 예시 검색어
-const EXAMPLES = ['네이비 케이블 니트 조끼', '베이지 트렌치코트', '흰색 가죽 스니커즈'];
+// 눌러서 바로 채우는 예시 검색어. 2026-11-22 실제 검색에서 쇼핑몰 2곳의 제품을 찾은 것만 둔다
+const EXAMPLES = ['베이지 트렌치코트', '블랙 와이드 슬랙스', '연청 와이드 데님 팬츠'];
 
 const VERDICT: Record<SimilarCheckResult['verdict'], string> = {
   DUPLICATE: '거의 같은 옷이 옷장에 있어요',
