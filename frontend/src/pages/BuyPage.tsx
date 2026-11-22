@@ -12,7 +12,7 @@ import { PhotoPicker } from '../components/PhotoPicker';
 import { ResultSkeleton, Spinner } from '../components/Skeleton';
 import { SearchIcon } from '../components/icons';
 import { useWeekPlan } from '../hooks/queries';
-import { buyRequestId, useBuyField, type BuyMode } from '../lib/buyStore';
+import { buyRequestIds, useBuyField, useBuyMode, type BuyMode } from '../lib/buyStore';
 import { today } from '../lib/date';
 import { CATEGORY_LABEL, SLOT_LABEL, itemLabel } from '../lib/labels';
 import { QUICK, SNAPPY, TAP, fadeUp, list, listItem } from '../lib/motion';
@@ -45,21 +45,21 @@ function queryOf(attributes: ClothingSuggestion): string {
 
 export function BuyPage() {
   const plan = useWeekPlan(today());
-  // 다른 탭을 다녀와도 남도록 화면 밖 저장소에 둠 (lib/buyStore)
-  const [file, setFile] = useBuyField('file');
+  // 다른 탭을 다녀와도 남도록 화면 밖 저장소에 둠 (lib/buyStore). 사진으로·글로는 칸이 따로라 오가도 남음
+  const [mode, setMode] = useBuyMode();
+  const [file, setFile] = useBuyField(mode, 'file');
   const [preview, setPreview] = useState<string | null>(null);
-  const [check, setCheck] = useBuyField('check');
-  const [checking, setChecking] = useBuyField('checking');
-  const [error, setError] = useBuyField('error');
-  const [find, setFind] = useBuyField('find');
-  const [chosen, setChosen] = useBuyField('chosen');
-  const [query, setQuery] = useBuyField('query');
-  const [linkedQuery, setLinkedQuery] = useBuyField('linkedQuery');
-  const [links, setLinks] = useBuyField('links');
-  const [linkError, setLinkError] = useBuyField('linkError');
-  const [text, setText] = useBuyField('text');
-  const [mode, setMode] = useBuyField('mode');
-  const requestId = buyRequestId;
+  const [check, setCheck] = useBuyField(mode, 'check');
+  const [checking, setChecking] = useBuyField(mode, 'checking');
+  const [error, setError] = useBuyField(mode, 'error');
+  const [find, setFind] = useBuyField(mode, 'find');
+  const [chosen, setChosen] = useBuyField(mode, 'chosen');
+  const [query, setQuery] = useBuyField(mode, 'query');
+  const [linkedQuery, setLinkedQuery] = useBuyField(mode, 'linkedQuery');
+  const [links, setLinks] = useBuyField(mode, 'links');
+  const [linkError, setLinkError] = useBuyField(mode, 'linkError');
+  const [text, setText] = useBuyField(mode, 'text');
+  const requestId = buyRequestIds[mode];
 
   useEffect(() => {
     if (!file) {
@@ -84,11 +84,9 @@ export function BuyPage() {
     setText('');
   };
 
-  // 찾는 방법을 바꾸면 앞서 본 결과를 비움
+  // 찾는 방법을 바꿔도 각 방법에서 보던 결과는 그대로 둠
   const switchMode = (next: Mode) => {
-    if (next === mode) return;
-    reset(null);
-    setMode(next);
+    if (next !== mode) setMode(next);
   };
 
   const loadLinks = async (text: string, category: Category | null, id: number) => {
