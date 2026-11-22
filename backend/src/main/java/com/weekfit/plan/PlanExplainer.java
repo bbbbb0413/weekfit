@@ -1,11 +1,19 @@
 package com.weekfit.plan;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -31,37 +39,83 @@ public class PlanExplainer {
     record AiDays(List<AiDay> days) {
     }
 
+    /** 옷장·일정·날씨가 그대로면 AI 입력도 같으므로, 입력 해시로 설명을 재사용한다. */
+    static final Duration CACHE_TTL = Duration.ofHours(6);
+    private static final int MAX_CACHE = 500;
+
+    private record Cached(Instant at, Map<LocalDate, Text> texts) {
+    }
+
     private final ChatClient chatClient;
     private final Resource systemPrompt;
+    private final Clock clock;
+    private final Map<String, Cached> cache = new ConcurrentHashMap<>();
 
-    public PlanExplainer(ChatClient chatClient, @Value("classpath:prompts/plan-explanation.st") Resource systemPrompt) {
+    public PlanExplainer(ChatClient chatClient, @Value("classpath:prompts/plan-explanation.st") Resource systemPrompt,
+            Clock clock) {
         this.chatClient = chatClient;
         this.systemPrompt = systemPrompt;
+        this.clock = clock;
     }
 
     public Explanations explain(List<WeeklyPlanner.DayResult> days, List<LaundryTask> tasks) {
         Map<LocalDate, Text> fallback = new HashMap<>();
         days.forEach(d -> fallback.put(d.context().date(), template(d)));
+        String plan = toJson(days, tasks);
+        String key = sha256(plan);
+        Instant now = clock.instant();
+
+        Cached hit = cache.get(key);
+        if (hit != null && now.isBefore(hit.at().plus(CACHE_TTL))) {
+            return new Explanations(merge(fallback, hit.texts()), true);
+        }
         try {
             AiDays response = chatClient.prompt()
                     .system(systemPrompt)
-                    .user(u -> u.text("코디 결과(JSON): {plan}").param("plan", toJson(days, tasks)))
+                    .user(u -> u.text("코디 결과(JSON): {plan}").param("plan", plan))
                     .call()
                     .entity(AiDays.class);
             if (response == null || response.days() == null) {
                 return new Explanations(fallback, false);
             }
-            Map<LocalDate, Text> result = new HashMap<>(fallback);
+            Map<LocalDate, Text> aiTexts = new HashMap<>();
             for (AiDay day : response.days()) {
                 LocalDate date = parse(day.date());
-                if (date != null && result.containsKey(date) && day.reason() != null && !day.reason().isBlank()) {
-                    result.put(date, new Text(cut(day.reason()), day.layeringTip() == null ? null : cut(day.layeringTip())));
+                if (date != null && fallback.containsKey(date) && day.reason() != null && !day.reason().isBlank()) {
+                    aiTexts.put(date, new Text(cut(day.reason()), day.layeringTip() == null ? null : cut(day.layeringTip())));
                 }
             }
-            return new Explanations(result, true);
+            remember(key, new Cached(now, Map.copyOf(aiTexts)));
+            return new Explanations(merge(fallback, aiTexts), true);
         } catch (RuntimeException e) {
             log.warn("Plan explanation by AI failed, using templates: {}", e.toString());
             return new Explanations(fallback, false);
+        }
+    }
+
+    private static Map<LocalDate, Text> merge(Map<LocalDate, Text> fallback, Map<LocalDate, Text> aiTexts) {
+        Map<LocalDate, Text> result = new HashMap<>(fallback);
+        result.putAll(aiTexts);
+        return result;
+    }
+
+    private void remember(String key, Cached value) {
+        if (cache.size() >= MAX_CACHE) {
+            Instant now = value.at();
+            cache.entrySet().removeIf(e -> !now.isBefore(e.getValue().at().plus(CACHE_TTL)));
+            if (cache.size() >= MAX_CACHE) {
+                cache.clear();
+            }
+        }
+        cache.put(key, value);
+    }
+
+    private static String sha256(String text) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 
