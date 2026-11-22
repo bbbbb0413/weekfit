@@ -3,6 +3,7 @@ package com.modi.closet;
 import com.modi.ai.AiUnavailableException;
 import com.modi.ai.ClothingVisionAnalyzer;
 import com.modi.common.error.NotFoundException;
+import com.modi.demo.DemoClothingSample;
 import com.modi.storage.ImageNormalizer;
 import com.modi.storage.StorageService;
 import java.time.Clock;
@@ -37,6 +38,9 @@ public class ClothingService {
     public ClothingAnalysisResult analyze(byte[] upload) {
         byte[] jpeg = imageNormalizer.normalize(upload);
         String key = storage.putJpeg(jpeg);
+        if (DemoClothingSample.matches(upload)) {
+            return new ClothingAnalysisResult(key, StorageService.urlOf(key), true, DemoClothingSample.SUGGESTION);
+        }
         try {
             ClothingSuggestion suggestion = ClothingSuggestion.from(visionAnalyzer.analyze(jpeg));
             return new ClothingAnalysisResult(key, StorageService.urlOf(key), true, suggestion);

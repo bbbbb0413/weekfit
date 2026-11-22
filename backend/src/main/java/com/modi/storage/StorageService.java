@@ -64,6 +64,30 @@ public class StorageService {
         }
     }
 
+    /** 이미지가 아닌 작은 파일(예: 아바타 SVG 캐시)을 정해진 키로 저장한다. */
+    public void put(String key, byte[] bytes, String contentType) {
+        if (!isValidKey(key)) {
+            throw new IllegalArgumentException("저장 키가 올바르지 않습니다.");
+        }
+        try {
+            s3.putObject(b -> b.bucket(bucket).key(key).contentType(contentType), RequestBody.fromBytes(bytes));
+        } catch (SdkException e) {
+            throw new ExternalServiceException("파일을 저장하지 못했습니다.", e);
+        }
+    }
+
+    /** 키가 없거나 저장소 오류면 빈 값. 캐시 조회용이라 실패를 예외로 올리지 않는다. */
+    public java.util.Optional<byte[]> find(String key) {
+        if (!isValidKey(key)) {
+            return java.util.Optional.empty();
+        }
+        try {
+            return java.util.Optional.of(s3.getObjectAsBytes(b -> b.bucket(bucket).key(key)).asByteArray());
+        } catch (SdkException e) {
+            return java.util.Optional.empty();
+        }
+    }
+
     public StoredImage get(String key) {
         if (!isValidKey(key)) {
             throw new NotFoundException("이미지를 찾을 수 없습니다.");

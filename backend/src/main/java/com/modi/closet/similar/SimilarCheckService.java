@@ -41,6 +41,12 @@ public class SimilarCheckService {
         return compare(target, repository.findByUserIdOrderByCreatedAtDesc(userId), clock.instant());
     }
 
+    /** 이미 분석한 옷 속성을 옷장과 비교한다. 살까 말까의 부위별 비교가 쓴다. */
+    @Transactional(readOnly = true)
+    public SimilarCheckResult compareWith(UUID userId, ClothingSuggestion target) {
+        return compare(target, repository.findByUserIdOrderByCreatedAtDesc(userId), clock.instant());
+    }
+
     static SimilarCheckResult compare(ClothingSuggestion target, List<ClothingItem> closet, Instant now) {
         List<SimilarCheckResult.Match> matches = closet.stream()
                 .map(item -> {

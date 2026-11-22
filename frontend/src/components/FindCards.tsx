@@ -62,9 +62,11 @@ interface FindCardsProps {
   state: Exclude<FindState, { kind: 'idle' }>;
   selectedUrl: string | null;
   onSelect: (item: FindItem) => void;
+  // 간단히: AI 해석 문장, 가격 안내 문구, 자세히 보기를 빼고 제품만 보여 줌
+  compact?: boolean;
 }
 
-export function FindCards({ state, selectedUrl, onSelect }: FindCardsProps) {
+export function FindCards({ state, selectedUrl, onSelect, compact = false }: FindCardsProps) {
   if (state.kind === 'loading') return <FindWait />;
   if (state.kind === 'unavailable') {
     return <p className="note note--warn">데모 모드에서는 AI 제품 찾기를 쓸 수 없어요. 서버에 연결하면 실제 판매 중인 제품을 찾아 드려요.</p>;
@@ -80,8 +82,8 @@ export function FindCards({ state, selectedUrl, onSelect }: FindCardsProps) {
   const originalPrice = result.original?.price ?? null;
   return (
     <div className="finds">
-      {result.analysis && <p className="finds__analysis">{result.analysis}</p>}
-      {result.original?.name && originalPrice !== null && (
+      {!compact && result.analysis && <p className="finds__analysis">{result.analysis}</p>}
+      {!compact && result.original?.name && originalPrice !== null && (
         <p className="finds__original">
           올린 옷으로 본 제품: {result.original.name}, {won.format(originalPrice)}원
         </p>
@@ -89,22 +91,22 @@ export function FindCards({ state, selectedUrl, onSelect }: FindCardsProps) {
       {result.items.length > 0 && (
         <m.ul className="finds__list" variants={list} initial="hidden" animate="show">
           {result.items.map((item) => (
-            <FindCard key={item.url} item={item} originalPrice={originalPrice} selected={item.url === selectedUrl} onSelect={() => onSelect(item)} />
+            <FindCard key={item.url} item={item} originalPrice={originalPrice} selected={item.url === selectedUrl} onSelect={() => onSelect(item)} compact={compact} />
           ))}
         </m.ul>
       )}
-      {result.items.length === 0 && result.warnings.length === 0 && <p className="note">조건에 맞는 더 싼 제품을 찾지 못했어요. 아래 쇼핑몰 검색으로 직접 찾아볼 수 있어요.</p>}
-      {result.warnings.map((warning) => (
+      {result.items.length === 0 && (compact || result.warnings.length === 0) && <p className="note">조건에 맞는 더 싼 제품을 찾지 못했어요. 아래 쇼핑몰 검색으로 직접 찾아볼 수 있어요.</p>}
+      {!compact && result.warnings.map((warning) => (
         <p key={warning} className={result.items.length > 0 ? 'note' : 'note note--warn'}>
           {warning}
         </p>
       ))}
-      <p className="source-line">{result.aiAvailable ? 'AI가 웹에서 찾은 결과예요. 가격은 검색 시점 기준이라 상품 페이지에서 다시 확인해 주세요.' : 'AI 연결이 안 돼서 쇼핑몰 검색 링크로 대신했어요.'}</p>
+      {!compact && <p className="source-line">{result.aiAvailable ? 'AI가 웹에서 찾은 결과예요. 가격은 검색 시점 기준이라 상품 페이지에서 다시 확인해 주세요.' : 'AI 연결이 안 돼서 쇼핑몰 검색 링크로 대신했어요.'}</p>}
     </div>
   );
 }
 
-function FindCard({ item, originalPrice, selected, onSelect }: { item: FindItem; originalPrice: number | null; selected: boolean; onSelect: () => void }) {
+function FindCard({ item, originalPrice, selected, onSelect, compact }: { item: FindItem; originalPrice: number | null; selected: boolean; onSelect: () => void; compact: boolean }) {
   const saved = originalPrice !== null && originalPrice > item.price ? originalPrice - item.price : null;
   const body = (
     <>
@@ -132,7 +134,7 @@ function FindCard({ item, originalPrice, selected, onSelect }: { item: FindItem;
         <div className="find-card__main">{body}</div>
       )}
       <div className="find-card__foot">
-        {item.size ? (
+        {!compact && item.size ? (
           <details className="find-card__more">
             <summary>자세히 보기</summary>
             <p>추천 사이즈 {item.size}</p>

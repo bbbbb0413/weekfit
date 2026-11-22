@@ -123,7 +123,7 @@ public class WeeklyPlanner {
                     items.stream().map(Garment::displayName).toList(),
                     OffsetDateTime.ofInstant(deadline, ClockConfig.ZONE),
                     date,
-                    date + " 착용 전에 세탁 기준 횟수에 닿아요. 건조 시간을 고려한 마감이에요."));
+                    date.getMonthValue() + "/" + date.getDayOfMonth() + "에 입으려면 미리 빨아야 해요."));
         });
 
         List<DayResult> results = days.stream()

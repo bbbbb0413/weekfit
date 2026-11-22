@@ -4,6 +4,9 @@ import { API_MODE, ApiError, get, send, upload } from './client';
 import { analyzeEvent, evaluateOutfit, maskText, planDayLocal, planWeek } from './local/engine';
 import { localStore } from './local/store';
 import type {
+  AvatarModel,
+  AvatarPaint,
+  LookResult,
   CalendarEvent,
   Category,
   DayPlan,
@@ -48,6 +51,10 @@ async function orLocal<T>(remote: () => Promise<T>, local: () => T | Promise<T>,
 
 export const api = {
   // ---------- 옷장 ----------
+  // 옷 사진을 보고 AI가 그린 아바타 옷 그림. mock 모드는 AI가 없어 옷 색으로 칠함
+  avatarPaint: (id: string, model: AvatarModel): Promise<AvatarPaint> =>
+    mock ? Promise.resolve({ svg: null, aiAvailable: false }) : get(`/api/clothes/${id}/avatar-paint`, { model }),
+
   listClothes: (): Promise<Clothing[]> => (mock ? Promise.resolve(localStore.listClothes()) : get('/api/clothes')),
 
   analyzeClothing: (image: File): Promise<ClothingAnalysisResult> =>
@@ -197,6 +204,14 @@ export const api = {
       : { data: await upload<ShoppingResult>('/api/shopping/similar', { image }), source: 'server' },
 
   // AI 웹 검색으로 더 싼 실제 제품 찾기. 20~30초 걸린다. mock 모드는 사진 분석을 못 해 null
+  // 살까 말까: 코디 사진 한 장을 부위별 카드로 나눔 (AI 1회)
+  shoppingLook: (image: File): Promise<LookResult> =>
+    mock ? Promise.resolve({ pieces: [], aiAvailable: false }) : upload<LookResult>('/api/shopping/look', { image }),
+
+  // 살까 말까 카드 하나: 빈손이면 서버가 검색어를 바꿔 최대 3번까지 다시 찾음
+  lookFind: async (input: { image?: File; queries: string[] }): Promise<FindResult | null> =>
+    mock ? null : upload<FindResult>('/api/shopping/look/find', { image: input.image, queries: input.queries.join('\n') }),
+
   shoppingFind: async (input: { image?: File; text?: string }): Promise<FindResult | null> =>
     mock ? null : upload<FindResult>('/api/shopping/find', { image: input.image, text: input.text }),
 
