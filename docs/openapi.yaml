@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Weekfit API
+  title: Modi API
   version: 0.1.0
   description: |
     일정·날씨·세탁 상태를 함께 읽고 코디를 추천하는 옷장 에이전트 백엔드 API.

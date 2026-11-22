@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: weekfit
       POSTGRES_PASSWORD: weekfit
     ports:
-      - "${WEEKFIT_PG_PORT:-15432}:5432"
+      - "${MODI_PG_PORT:-15432}:5432"
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
@@ -20,8 +20,8 @@ services:
     image: chrislusf/seaweedfs:4.48
     command: "server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json -filer"
     ports:
-      - "${WEEKFIT_FILER_PORT:-18888}:8888" # filer HTTP
-      - "${WEEKFIT_S3_PORT:-18333}:8333" # S3 API
+      - "${MODI_FILER_PORT:-18888}:8888" # filer HTTP
+      - "${MODI_S3_PORT:-18333}:8333" # S3 API
     volumes:
       - seaweed-data:/data
       - ./scripts/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro # 로컬 전용 S3 키(local/local)

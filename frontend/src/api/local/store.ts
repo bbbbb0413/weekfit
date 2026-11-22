@@ -21,7 +21,7 @@ import { analyzeEvent, maskText } from './engine';
 import { sampleWeather, seedCloset, seedEvents } from './seed';
 import { buildMallLinks, sanitizeQuery } from './shopping';
 
-const KEY = 'weekfit.local.v1';
+const KEY = 'modi.local.v1';
 
 interface State {
   seededOn: string;

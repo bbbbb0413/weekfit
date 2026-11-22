@@ -4,9 +4,9 @@ plugins {
 	id("io.spring.dependency-management") version "1.1.7"
 }
 
-group = "com.weekfit"
+group = "com.modi"
 version = "0.0.1-SNAPSHOT"
-description = "Weekfit backend"
+description = "Modi backend"
 
 java {
 	toolchain {

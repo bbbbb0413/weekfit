@@ -1,4 +1,4 @@
-# Weekfit 프론트엔드
+# modi 프론트엔드
 
 일정, 날씨, 세탁 상태를 함께 읽고 일주일 코디를 계획하는 옷장 에이전트의 화면이다. API 계약은 [`docs/openapi.yaml`](../docs/openapi.yaml)을 따른다.
 

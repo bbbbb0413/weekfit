@@ -1,6 +1,6 @@
 spring:
   application:
-    name: weekfit
+    name: modi
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:15432/weekfit}
     username: ${DB_USERNAME:weekfit}
@@ -42,7 +42,7 @@ management:
       exposure:
         include: health
 
-weekfit:
+modi:
   shopping:
     # 제품 추천 전용 모델. 6건 비교에서 Opus 와 품질이 같고 비용이 약 25% 낮아 Sonnet 을 기본으로 둔다. 비우면 ANTHROPIC_MODEL 을 쓴다
     find-model: ${SHOPPING_FIND_MODEL:claude-sonnet-5-5}

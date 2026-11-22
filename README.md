@@ -1,4 +1,4 @@
-# Weekfit
+# modi
 
 일정·날씨·세탁 상태를 함께 읽고 일주일 코디를 계획하는 옷장 에이전트이다.
 
@@ -128,7 +128,7 @@ cd backend && set -a && . ../.env && set +a && ./gradlew bootRun
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | 로컬 PostgreSQL | 데이터베이스 접속 정보 |
 | `DB_POOL_SIZE` | `5` | 데이터베이스 최대 연결 수 |
 | `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | 로컬 저장소 | S3 호환 이미지 저장소 |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | API 호출을 허용할 웹 주소. 쉼표로 여러 개를 쓰고, `https://weekfit-*.vercel.app` 같은 패턴도 쓸 수 있다 |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | API 호출을 허용할 웹 주소. 쉼표로 여러 개를 쓰고, `https://modi-*.vercel.app` 같은 패턴도 쓸 수 있다 |
 | `JAVA_OPTS` | 메모리 512MB 기준 값 | 컨테이너에서 실행할 때의 JVM 옵션 |
 | `AI_RATE_LIMIT_PER_HOUR` | `60` | AI 호출 API의 IP당 시간 한도 |
 | `FIND_RATE_LIMIT_PER_HOUR` | `10` | AI 제품 추천의 IP당 시간 한도 |

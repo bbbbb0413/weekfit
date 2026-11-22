@@ -1,7 +1,7 @@
 {
   "identities": [
     {
-      "name": "weekfit-local",
+      "name": "modi-local",
       "credentials": [{ "accessKey": "local", "secretKey": "local" }],
       "actions": ["Admin", "Read", "Write", "List", "Tagging"]
     }
