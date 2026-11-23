@@ -219,6 +219,23 @@ export const localStore = {
     return log;
   },
 
+  // 착용 기록 취소: 착용 횟수, 마지막 착용일, 체감 보정을 기록 전으로 되돌림
+  cancelWear(id: string): void {
+    const log = db().wearLogs.find((l) => l.id === id);
+    if (!log) return;
+    db().wearLogs = db().wearLogs.filter((l) => l.id !== id);
+    log.itemIds.forEach((itemId) => {
+      const item = find(itemId);
+      item.wearsSinceWash = Math.max(0, item.wearsSinceWash - 1);
+      item.needsWash = item.wearsSinceWash >= item.washThreshold;
+      const dates = db().wearLogs.filter((l) => l.itemIds.includes(itemId)).map((l) => l.date).sort();
+      item.lastWornOn = dates.length ? dates[dates.length - 1] : null;
+    });
+    if (log.feedback === 'COLD') db().warmthBias = Math.max(-2, db().warmthBias - 1);
+    if (log.feedback === 'HOT') db().warmthBias = Math.min(2, db().warmthBias + 1);
+    commit();
+  },
+
   listWearLogs(from: string, to: string): WearLog[] {
     return db().wearLogs.filter((log) => log.date >= from && log.date <= to);
   },

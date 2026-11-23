@@ -79,6 +79,9 @@ export const api = {
   recordWear: (body: WearLogRequest): Promise<WearLog> =>
     mock ? Promise.resolve(localStore.recordWear(body)) : send('POST', '/api/wear-logs', body),
 
+  cancelWear: (id: string): Promise<void> =>
+    mock ? Promise.resolve(localStore.cancelWear(id)) : send('DELETE', `/api/wear-logs/${id}`),
+
   listWearLogs: (from: string, to: string): Promise<WearLog[]> =>
     orLocal(
       () => get('/api/wear-logs', { from, to }),
