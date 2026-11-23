@@ -33,6 +33,8 @@ public class FindService {
     static final int MAX_TEXT = 300;
     /** 상품을 못 찾으면 검색어를 바꿔 다시 찾는다. 처음 1번을 포함한 전체 시도 횟수 */
     static final int MAX_ATTEMPTS = 5;
+    /** 이 시간이 지나면 새 재시도를 시작하지 않는다. 재시도 1번이 약 30초라 전체 대기를 1분 안팎으로 묶는다 */
+    static final long RETRY_BUDGET_MILLIS = 40_000;
     private static final long CACHE_MILLIS = 30 * 60 * 1000L;
     private static final int MAX_CACHE = 500;
     private static final Pattern URL = Pattern.compile("https://\\S+");
@@ -97,6 +99,9 @@ public class FindService {
         List<String> tried = new ArrayList<>();
         List<ProductFinder.Found> firstFounds = null;
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            if (attempt > 1 && clock.millis() - startedAt > RETRY_BUDGET_MILLIS) {
+                break;
+            }
             List<ProductFinder.Found> founds = searchInParallel(jpeg, retryText(text, tried));
             if (founds.isEmpty()) {
                 break;
