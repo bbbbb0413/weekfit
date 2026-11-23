@@ -41,6 +41,15 @@
 - **쇼핑몰 바로가기:** 사진 속 옷의 검색어를 만들어 무신사·지그재그·29CM·W컨셉의 낮은 가격순 결과와 11번가 인기순 결과로 바로 연결한다.
 - **AI 제품 추천:** AI가 웹을 검색해 비슷하면서 더 싼 실제 제품을 최대 2개 찾아 이름·가격·쇼핑몰·추천 이유와 함께 보여 준다. 가격은 검색 시점 기준이다.
 
+### 살까 말까
+
+- 코디 사진 한 장을 올리면 겉옷, 상의, 하의, 신발을 부위별 카드로 나눠 상품명과 특징을 보여 준다. 옷장에 거의 같은 옷이 있으면 카드에 경고하고, 카드마다 더 싼 제품을 찾을 수 있다.
+- 카드 사진은 브라우저에서 MediaPipe로 사람의 얼굴과 피부를 지우고 옷만 남긴다. 사진을 서버로 보내지 않는다.
+
+### 아바타 옷 입히기
+
+- 오늘 코디를 캐릭터에 입혀 보여 준다. AI가 옷 사진을 보고 캐릭터가 입을 옷을 SVG로 한 번 그리고, 그림은 저장해 다시 쓴다.
+
 ### 믿을 수 있는 추천
 
 - AI가 확신이 낮거나 실패하면 그 사실을 응답에 표시하고, 규칙 기반 결과나 쇼핑몰 바로가기로 대신한다.
@@ -49,6 +58,60 @@
 ## 기술 스택
 
 Java 21, Spring Boot 4.2, Spring AI 2.1(Claude 기본, GPT·Gemini 전환 가능), PostgreSQL 17, S3 호환 저장소, Open-Meteo
+
+## 구조
+
+```mermaid
+flowchart LR
+    U[브라우저] --> W[웹 화면<br/>React, Vercel]
+    W -->|REST API| A[API 서버<br/>Spring Boot, Render]
+    W -.->|브라우저 안에서 실행| M[MediaPipe 옷 영역 분할]
+    A --> DB[(PostgreSQL<br/>Supabase)]
+    A --> S3[(이미지 저장소<br/>Supabase Storage)]
+    A --> C[Claude API]
+    A --> F[Open-Meteo 예보]
+    A -.->|한도 초과 시| N[MET Norway 예보]
+```
+
+### 설계 원칙
+
+1. 코디 선택, 주간 배정, 세탁 마감 계산, 옷장 유사도 비교는 규칙 엔진이 한다. AI는 사진과 일정 글에서 속성을 읽고, 설명 문장을 쓰고, 웹에서 제품을 찾는 데만 쓴다.
+2. AI 호출이 실패하면 일정 분석은 키워드 규칙, 코디 설명은 규칙 문장, 옷 평가는 기본 색 점수, 제품 찾기는 쇼핑몰 검색 링크로 대신한다.
+3. AI가 준 값은 서버에서 다시 정리한다. 정해진 어휘와 범위 밖의 값은 버리고, 제품 주소는 실제 웹 검색 결과에 있는지 확인하고, SVG는 실행 가능한 요소가 있으면 버린다.
+4. 일정 저장과 주간 계획은 규칙 결과로 먼저 응답하고, AI 결과는 백그라운드에서 만들어 다음 조회 때 바꿔 넣는다.
+
+### AI 호출 지점
+
+| 기능 | 클래스 | 모델 | 실패 시 |
+|---|---|---|---|
+| 옷 사진 분석 | `ClothingVisionAnalyzer` | Opus 5.5 | 빈 양식, 직접 입력 |
+| 일정 분석 | `EventAnalyzer` | Opus 5.5 | 키워드 규칙 |
+| 코디 설명 | `PlanExplainer` | Opus 5.5 | 규칙 문장 |
+| 옷 평가 총평 | `EvaluationNarrator` | Opus 5.5 | 기본 색 점수 |
+| 코디 사진 부위별 분석 | `LookService` | Opus 5.5 | 빈 카드 목록 |
+| 가성비 제품 찾기 | `ProductFinder` | Sonnet 5.5 + 웹 검색 | 쇼핑몰 검색 링크 |
+| 아바타 옷 그림 | `AvatarPaintService` | Opus 5.5 | 옷 색으로 칠한 기본 그림 |
+
+프롬프트는 `backend/src/main/resources/prompts/`에 기능별로 있다.
+
+### 백엔드 패키지 (`backend/src/main/java/com/modi`)
+
+| 패키지 | 역할 |
+|---|---|
+| `ai` | ChatClient 설정, 옷 사진 분석, AI 사용량 기록 |
+| `avatar` | 아바타 옷 그림 생성과 SVG 검사 |
+| `closet` | 옷장 CRUD, 상태와 세탁, 비슷한 옷 보유 검사(`similar`) |
+| `common` | 응답 형식, 오류 처리, 캐시, 요청 제한, 사용자 식별 |
+| `demo` | 데모 옷장과 일정 시드 |
+| `outfit` | 옷 조합 평가 |
+| `plan` | 주간 코디 계획, 하루 재추천, 세탁 역산, 코디 설명 |
+| `schedule` | 일정 저장과 동기화, 개인정보 마스킹, 일정 분석 |
+| `shopping` | 쇼핑몰 검색 링크, 가성비 제품 찾기(`find`), 살까 말까(`look`) |
+| `storage` | 이미지 정규화(EXIF 제거), S3 저장소 |
+| `weather` | 예보 조회와 출처 전환, 체감온도와 보온 규칙 |
+| `wear` | 착용 기록과 추워요/더워요 피드백 |
+
+웹 화면(`frontend/src`)은 `pages`에 오늘, 주간, 옷장, 살까 말까 4개 화면이 있고, `api/local`에 서버 없이 도는 브라우저용 규칙 엔진(mock 모드)이 있다.
 
 ## 실행
 
@@ -86,6 +149,7 @@ cd backend && set -a && . ../.env && set +a && ./gradlew bootRun
 | POST | `/api/laundry` | 여러 벌을 한 번에 세탁 시작으로 바꾼다 |
 | POST | `/api/clothes/similar-check` | 사려는 옷 사진을 내 옷장과 비교한다 |
 | GET | `/api/images/{key}` | 저장된 옷 이미지를 내려받는다 |
+| GET | `/api/clothes/{id}/avatar-paint` | 캐릭터(`model`)가 입을 옷 그림을 SVG로 돌려준다. 옷마다 한 번 그리고 저장한다 |
 
 ### 착용 기록
 
@@ -93,6 +157,7 @@ cd backend && set -a && . ../.env && set +a && ./gradlew bootRun
 |---|---|---|
 | POST | `/api/wear-logs` | 입은 옷과 추워요/더워요 피드백을 기록한다 |
 | GET | `/api/wear-logs` | 착용 기록을 조회한다 |
+| DELETE | `/api/wear-logs/{id}` | 착용 기록을 취소한다. 입은 횟수와 추워요/더워요 보정도 되돌린다 |
 
 ### 날씨
 
@@ -124,7 +189,15 @@ cd backend && set -a && . ../.env && set +a && ./gradlew bootRun
 |---|---|---|
 | POST | `/api/shopping/similar` | 옷 사진으로 검색어와 쇼핑몰 바로가기 링크 5개를 돌려준다 |
 | GET | `/api/shopping/links` | 고친 검색어로 링크만 다시 만든다(`query`, 선택 `category`). AI를 호출하지 않는다 |
+| POST | `/api/shopping/look` | 코디 사진(`image`)을 부위별 카드로 나누고 옷장에 거의 같은 옷이 있으면 함께 알려 준다 |
+| POST | `/api/shopping/look/find` | 카드 하나의 더 싼 제품을 찾는다. 빈손이면 검색어(`queries`, 줄바꿈 구분)를 바꿔 최대 3번까지 다시 찾는다 |
 | POST | `/api/shopping/find` | 사진(`image`)이나 텍스트(`text`)로 더 싼 실제 제품을 최대 2개 찾는다. 20~30초 걸리며, 실패해도 쇼핑몰 링크를 함께 돌려준다 |
+
+### 운영
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/ai-usage` | 서버가 켜진 뒤 기능별 AI 호출 횟수와 입력, 출력 토큰을 돌려준다 |
 
 ## 환경 변수
 
