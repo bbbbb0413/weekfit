@@ -12,7 +12,8 @@ import org.springframework.context.annotation.Configuration;
 public class AiConfig {
 
     @Bean
-    public ChatClient chatClient(ChatClient.Builder builder) {
-        return builder.build();
+    public ChatClient chatClient(ChatClient.Builder builder, AiUsageTracker usageTracker) {
+        // 모든 AI 호출의 토큰 사용량을 기록 (GET /api/ai-usage)
+        return builder.defaultAdvisors(new UsageTrackingAdvisor(usageTracker)).build();
     }
 }

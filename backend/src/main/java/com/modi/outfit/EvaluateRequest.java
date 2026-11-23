@@ -13,5 +13,11 @@ public record EvaluateRequest(
         UUID eventId,
         Tpo tpo,
         Double lat,
-        Double lon) {
+        Double lon,
+        // false 면 AI 설명 없이 규칙 점수만 돌려줌(비용 0). 비우면 예전처럼 AI 설명까지
+        Boolean ai) {
+
+    public boolean wantsAi() {
+        return ai == null || ai;
+    }
 }

@@ -26,8 +26,10 @@ public class AiRateLimitFilter extends OncePerRequestFilter {
     private static final List<String> AI_PATHS = List.of(
             "/api/clothes/analyze",
             "/api/clothes/similar-check",
+            "/api/shopping/look",
             "/api/shopping/similar",
             "/api/shopping/find",
+            "/api/shopping/look/find",
             "/api/outfits/evaluate",
             "/api/events/sync",
             "/api/events",
@@ -35,6 +37,8 @@ public class AiRateLimitFilter extends OncePerRequestFilter {
             "/api/plans/day");
     /** 웹 검색을 쓰는 제품 찾기는 1회 비용이 약 0.28달러라 별도 한도를 더 둔다. */
     static final String FIND_PATH = "/api/shopping/find";
+    /** 살까 말까 카드 찾기는 서버 안에서 최대 3번 다시 찾지만 한도는 1회로 센다. */
+    static final List<String> FIND_PATHS = List.of(FIND_PATH, "/api/shopping/look/find");
     private static final long WINDOW_MILLIS = 60 * 60 * 1000L;
     private static final String BODY = "{\"success\":false,\"data\":null,\"error\":\"요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.\"}";
 
@@ -64,7 +68,7 @@ public class AiRateLimitFilter extends OncePerRequestFilter {
         long now = clock.millis();
         long windowStart = now - (now % WINDOW_MILLIS);
         String ip = request.getRemoteAddr();
-        boolean overFind = FIND_PATH.equals(request.getRequestURI())
+        boolean overFind = FIND_PATHS.contains(request.getRequestURI())
                 && increment("find:" + ip, windowStart) > findLimitPerHour;
         if (overFind || increment(ip, windowStart) > limitPerHour) {
             response.setStatus(429);

@@ -1,14 +1,18 @@
 // 기능: 옷 등록 & 정보 고치기. 등록은 사진을 올리면 AI 제안값을 받아 확인 후 저장, 고치기는 저장된 값을 바꿈
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { COLORS, STYLES, type Category, type Clothing, type ClothingAnalysisResult, type Color, type Style } from '../api/types';
 import { CATEGORY_LABEL, COLOR_HEX, FORMALITY_LABEL, WARMTH_LABEL } from '../lib/labels';
-import { useCreateClothing, useUpdateClothing } from '../hooks/queries';
+import { useClothes, useCreateClothing, useUpdateClothing } from '../hooks/queries';
 import { PhotoPicker } from './PhotoPicker';
 import { Sheet } from './Sheet';
 import { FormSkeleton, Spinner } from './Skeleton';
 import { useToast } from './Toast';
+
+// 시연용: 옷 등록을 열면 들어가 있는 예시 사진. 서버가 같은 사진을 알아보고 미리 받아 둔 분석값을 돌려줌(AI 호출 없음)
+const SAMPLE_PHOTO = '/demo/new-cloth.jpg';
+const SAMPLE_NAME = '베이지 고양이 자수 맨투맨';
 
 const CATEGORIES: Category[] = ['TOP', 'BOTTOM', 'OUTER', 'DRESS', 'SHOES', 'ACCESSORY'];
 
@@ -58,6 +62,25 @@ export function AddClothingSheet({ item, onClose }: { item?: Clothing; onClose: 
       setAnalyzing(false);
     }
   };
+
+  // 새로 등록할 때만, 아직 옷장에 없으면 예시 사진을 미리 넣어 둠
+  const closet = useClothes();
+  const hasSample = closet.data?.some((c) => c.name === SAMPLE_NAME) ?? true;
+  useEffect(() => {
+    if (item || hasSample) return;
+    let alive = true;
+    fetch(SAMPLE_PHOTO)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('no sample'))))
+      .then((blob) => {
+        if (alive) pick(new File([blob], 'new-cloth.jpg', { type: 'image/jpeg' }));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+    // 시트를 열 때 한 번만
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSample]);
 
   const save = () => {
     if (item) {

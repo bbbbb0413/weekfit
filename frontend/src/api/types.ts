@@ -45,6 +45,15 @@ export interface ClothingSuggestion {
   description: string | null;
 }
 
+// 옷을 입힐 캐릭터. 길쭉한 마네킹(기본, 손 흔들기, 허리에 손, 다리 꼬기) 또는 기존 모디
+export type AvatarModel = 'mannequin' | 'wave' | 'hip' | 'cross' | 'modi';
+
+// 아바타에 입힐 옷 그림. svg 가 null 이면 옷 색으로 칠한다
+export interface AvatarPaint {
+  svg: string | null;
+  aiAvailable: boolean;
+}
+
 export interface ClothingAnalysisResult {
   imageKey: string;
   imageUrl: string;
@@ -240,6 +249,8 @@ export interface EvaluateRequest {
   tpo?: Tpo;
   lat?: number;
   lon?: number;
+  // false 면 규칙 점수만(AI 호출 없음)
+  ai?: boolean;
 }
 
 export interface SimilarMatch {
@@ -254,6 +265,28 @@ export interface SimilarCheckResult {
   matches: SimilarMatch[];
   pairableCount: number;
   comment: string;
+}
+
+// 살까 말까: 코디 사진을 부위별 카드로 나눈 결과
+export interface LookPiece {
+  index: number;
+  // 추정 제품명. 예: 울 혼방 싱글 브레스티드 롱코트
+  productName: string | null;
+  // 로고 등으로 알아본 브랜드. 모르면 null
+  brandGuess: string | null;
+  // 한 줄 특징. 예: 무릎 아래 기장, 노치드 라펠
+  spec: string | null;
+  // 사진에서 이 옷의 영역(0~1 비율)
+  box: { x: number; y: number; w: number; h: number };
+  attributes: ClothingSuggestion;
+  searchQuery: string | null;
+  // 옷장에 거의 같은 옷이 있을 때만
+  duplicate: SimilarMatch | null;
+}
+
+export interface LookResult {
+  pieces: LookPiece[];
+  aiAvailable: boolean;
 }
 
 export type ShoppingMall = 'MUSINSA' | 'ZIGZAG' | 'CM29' | 'WCONCEPT' | 'ELEVENST';

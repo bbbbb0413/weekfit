@@ -1,6 +1,7 @@
 // 기능: 코디 보드. 겉옷, 상의, 하의, 신발을 사진 칸으로 한눈에 표시
 
 import { m } from 'framer-motion';
+import type { ReactNode } from 'react';
 import type { Clothing, Outfit, OutfitSlot } from '../api/types';
 import { COLOR_HEX, SLOT_LABEL, itemLabel } from '../lib/labels';
 import { EASE_OUT, list, listItem } from '../lib/motion';
@@ -52,11 +53,14 @@ interface OutfitBoardProps {
   // 칸을 눌러 옷을 바꿀 수 있는 보드
   onSlot?: (slot: OutfitSlot) => void;
   busy?: boolean;
+  // 왼쪽 위 큰 칸에 둘 것(옷 입힌 마네킹). 있으면 살까 말까처럼 사진 둘레에 옷 카드를 둠
+  lead?: ReactNode;
 }
 
-export function OutfitBoard({ pieces, onSlot, busy }: OutfitBoardProps) {
+export function OutfitBoard({ pieces, onSlot, busy, lead }: OutfitBoardProps) {
   return (
-    <ul className="board" aria-busy={busy || undefined}>
+    <ul className={`board${lead ? ' board--lead' : ''}`} aria-busy={busy || undefined}>
+      {lead && <li className="board__slot board__slot--lead">{lead}</li>}
       {slotsFor(pieces).map((slot) => {
         const piece = pieces[slot];
         const label = SLOT_LABEL[slot];

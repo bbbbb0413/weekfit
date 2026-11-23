@@ -4,6 +4,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { useState } from 'react';
 import type { DayPlan } from '../api/types';
 import { AddEventSheet } from '../components/AddEventSheet';
+import { MANNEQUIN_POSES, ModiAvatar } from '../components/ModiAvatar';
 import { ModiNote, ModiState } from '../components/ModiNote';
 import { OutfitStrip, piecesOf } from '../components/OutfitBoard';
 import { Spinner, WeekSkeleton } from '../components/Skeleton';
@@ -14,7 +15,7 @@ import { dayOfMonth, formatDeadline, formatTime, today, weekdayOf } from '../lib
 import { CONDITION_LABEL, TPO_LABEL } from '../lib/labels';
 import { QUICK, TAP, fadeUp } from '../lib/motion';
 
-function DayRow({ day, isToday, onRemoveEvent }: { day: DayPlan; isToday: boolean; onRemoveEvent: (id: string, title: string) => void }) {
+function DayRow({ day, isToday, index, onRemoveEvent }: { day: DayPlan; isToday: boolean; index: number; onRemoveEvent: (id: string, title: string) => void }) {
   return (
     <m.li className={`day${isToday ? ' is-today' : ''}`} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
       <div className="day__date">
@@ -45,7 +46,15 @@ function DayRow({ day, isToday, onRemoveEvent }: { day: DayPlan; isToday: boolea
           <p className="day__empty">일정 없음, {TPO_LABEL[day.tpo]} 차림</p>
         )}
 
-        {day.outfit && <OutfitStrip pieces={piecesOf(day.outfit)} />}
+        {day.outfit && (
+          <div className="look">
+            <div className="look__avatar">
+              {/* 시안 비교용: 날마다 마네킹 포즈 4종과 모디를 돌아가며 입힘 */}
+              <ModiAvatar items={day.outfit.items.map(({ item }) => item)} size={84} model={MANNEQUIN_POSES[index % MANNEQUIN_POSES.length]} />
+            </div>
+            <OutfitStrip pieces={piecesOf(day.outfit)} />
+          </div>
+        )}
         <p className="day__reason">{day.reason}</p>
         {day.layeringTip && <p className="day__tip">{day.layeringTip}</p>}
 
@@ -159,10 +168,11 @@ export function WeekPage() {
           </m.section>
 
           <ol className="days">
-            {data.days.map((day) => (
+            {data.days.map((day, index) => (
               <DayRow
                 key={day.date}
                 day={day}
+                index={index}
                 isToday={day.date === start}
                 onRemoveEvent={(id, title) => {
                   if (window.confirm(`${title} 일정을 삭제할까요?`)) {

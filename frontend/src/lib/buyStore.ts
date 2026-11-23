@@ -4,7 +4,7 @@
 
 import { useCallback } from 'react';
 import { create } from 'zustand';
-import type { FindItem, MallLink, SimilarCheckResult, Sourced } from '../api/types';
+import type { Category, FindItem, FindResult, LookResult, MallLink, SimilarCheckResult, Sourced } from '../api/types';
 import type { FindState } from '../components/FindCards';
 
 export type BuyMode = 'photo' | 'text';
@@ -21,6 +21,16 @@ export interface BuySlice {
   links: MallLink[];
   linkError: string | null;
   text: string;
+  // 살까 말까: 사진을 부위별 카드로 나눈 결과와, 아래 '쇼핑몰에서 직접 찾기'가 따라갈 옷 종류
+  look: LookResult | null;
+  looking: boolean;
+  linkCategory: Category | null;
+  // 살까 말까 카드: 고른 카드 번호, 카드별 가성비 찾기 상태, 예시 사진용으로 미리 받아 둔 결과
+  pieceSelected: number;
+  pieceFinds: Record<number, FindState>;
+  presetFinds: Record<string, FindResult>;
+  // 예시 사진의 카드 사진(미리 잘라 둔 파일). 있으면 브라우저에서 MediaPipe를 받지 않음
+  presetCrops: Record<string, string>;
 }
 
 interface BuyState {
@@ -40,6 +50,13 @@ const EMPTY: BuySlice = {
   links: [],
   linkError: null,
   text: '',
+  look: null,
+  looking: false,
+  linkCategory: null,
+  pieceSelected: 0,
+  pieceFinds: {},
+  presetFinds: {},
+  presetCrops: {},
 };
 
 const useBuyStore = create<BuyState>(() => ({ mode: 'photo', slices: { photo: EMPTY, text: EMPTY } }));

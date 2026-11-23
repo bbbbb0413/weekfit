@@ -60,7 +60,9 @@ public class OutfitEvaluationService {
                 .map(Garment::of).toList();
         OutfitRules.Result rules = OutfitRules.evaluate(outfit, ctx, closet, wearAt);
 
-        Optional<EvaluationNarrator.Narrative> narrative = narrator.narrate(outfit, ctx, rules);
+        Optional<EvaluationNarrator.Narrative> narrative = request.wantsAi()
+                ? narrator.narrate(outfit, ctx, rules)
+                : Optional.empty();
         OutfitRules.Checks checks = rules.checks();
         String summary = fallbackSummary(checks);
         if (narrative.isPresent()) {

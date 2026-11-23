@@ -34,16 +34,17 @@ export function useWeekPlan(start: string) {
   });
 }
 
-// 보드에 올린 옷이 바뀔 때마다 다시 평가. 새 점수가 올 때까지 이전 점수 유지
+// 보드에 올린 옷이 바뀔 때마다 규칙 점수로 다시 평가(AI 호출 없음). 새 점수가 올 때까지 이전 점수 유지
+// ai 가 true 면 같은 조합을 AI 설명까지 붙여 평가(사용자가 버튼을 눌렀을 때만)
 // tpo 를 주면 일정 대신 그 옷차림 기준으로 평가
-export function useEvaluation(itemIds: string[], date: string, eventId: string | undefined, enabled: boolean, tpo?: Tpo) {
+export function useEvaluation(itemIds: string[], date: string, eventId: string | undefined, enabled: boolean, tpo?: Tpo, ai = false) {
   const ids = [...itemIds].sort();
   return useQuery({
-    queryKey: ['evaluation', date, tpo ?? eventId ?? null, ids],
-    queryFn: () => api.evaluate(tpo ? { itemIds: ids, date, tpo } : { itemIds: ids, date, eventId }),
+    queryKey: ['evaluation', date, tpo ?? eventId ?? null, ids, ai],
+    queryFn: () => api.evaluate(tpo ? { itemIds: ids, date, tpo, ai } : { itemIds: ids, date, eventId, ai }),
     enabled,
-    staleTime: 5 * 60_000,
-    placeholderData: keepPreviousData,
+    staleTime: ai ? Infinity : 5 * 60_000,
+    placeholderData: ai ? undefined : keepPreviousData,
   });
 }
 

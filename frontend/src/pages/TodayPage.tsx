@@ -8,6 +8,7 @@ import { API_MODE, api } from '../api';
 import type { CalendarEvent, Clothing, DayPlan, OutfitEvaluation, OutfitSlot, Tpo, WeatherCondition } from '../api/types';
 import logo from '../assets/modi/logo.webp';
 import { CountUp } from '../components/CountUp';
+import { MANNEQUIN_POSES, ModiAvatar } from '../components/ModiAvatar';
 import { ModiNote, ModiState, poseFor, todayLine } from '../components/ModiNote';
 import { OutfitBoard, pieceOf, type Pieces } from '../components/OutfitBoard';
 import { PickSheet } from '../components/PickSheet';
@@ -99,8 +100,15 @@ export function TodayPage() {
     null,
   );
   const current = weather.data?.current;
-  const evaluation = useEvaluation(ids, date, event?.id, hasBase, tpoChoice ?? undefined);
+  // 옷을 바꿀 때마다는 규칙 점수만(무료). AI 평가는 사용자가 버튼을 누른 조합만 받음
+  const comboKey = [date, tpoChoice ?? event?.id ?? '', ...[...ids].sort()].join('|');
+  const [aiAsked, setAiAsked] = useState<Set<string>>(() => new Set());
+  const wantAi = aiAsked.has(comboKey);
+  const ruleEvaluation = useEvaluation(ids, date, event?.id, hasBase, tpoChoice ?? undefined);
+  const aiEvaluation = useEvaluation(ids, date, event?.id, hasBase && wantAi, tpoChoice ?? undefined, true);
+  const evaluation = wantAi && aiEvaluation.data ? aiEvaluation : ruleEvaluation;
   const result = evaluation.data;
+  const askAi = () => setAiAsked((all) => new Set(all).add(comboKey));
   const byId = (id: string | null) => (id ? closet.find((c) => c.id === id) : undefined);
 
   const refreshAll = () => {
@@ -279,7 +287,12 @@ export function TodayPage() {
         <>
           <ModiNote pose={done ? 'cheer' : custom ? 'hello' : poseFor(current)}>{done ? '오늘 코디를 기록했어요. 체감은 다음 추천 두께에 반영돼요.' : custom ? '바꾼 조합으로 다시 살펴봤어요.' : todayLine(current, event)}</ModiNote>
 
-          <OutfitBoard pieces={pieces} onSlot={setPicking} busy={evaluation.isFetching} />
+          <OutfitBoard
+            pieces={pieces}
+            onSlot={setPicking}
+            busy={evaluation.isFetching}
+            lead={<ModiAvatar items={wornItems} size={160} model={MANNEQUIN_POSES[new Date(date).getDate() % MANNEQUIN_POSES.length]} />}
+          />
 
           {custom && !done && (
             <div className="board-actions">
@@ -313,7 +326,19 @@ export function TodayPage() {
                   점
                 </p>
                 <p className="verdict__grade">{GRADE_LABEL[result.grade]}</p>
-                <p className="verdict__source">{result.aiAvailable ? 'AI 평가' : '규칙 평가'}</p>
+                {result.aiAvailable ? (
+                  <p className="verdict__source">AI 정밀평가</p>
+                ) : wantAi && aiEvaluation.isFetching ? (
+                  <p className="verdict__source">
+                    <Spinner /> AI가 정밀평가하는 중
+                  </p>
+                ) : wantAi ? (
+                  <p className="verdict__source">지금은 AI 정밀평가를 쓸 수 없어요</p>
+                ) : (
+                  <m.button type="button" className="button button--small verdict__ask" whileTap={TAP} onClick={askAi}>
+                    AI 정밀평가
+                  </m.button>
+                )}
               </div>
               <p className="verdict__summary">{custom || !day?.reason ? result.summary : day.reason}</p>
 
