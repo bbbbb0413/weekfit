@@ -25,9 +25,14 @@ const BY_NAME: Record<string, string> = {
   '트레킹화': 'trekking-shoes',
 };
 
+/** 데모 옷장 이름에 맞는 기본 사진 (서버 사진을 못 불러올 때 대신 씀) */
+export function defaultPhotoOf(name: string | null | undefined): string | null {
+  const slug = name ? BY_NAME[name] : undefined;
+  return slug ? (files[`../assets/closet/${slug}.webp`] ?? null) : null;
+}
+
 export function photoOf(item: Pick<Clothing, 'imageUrl' | 'name'>): string | null {
   const uploaded = imageSrc(item.imageUrl);
   if (uploaded) return uploaded;
-  const slug = item.name ? BY_NAME[item.name] : undefined;
-  return slug ? (files[`../assets/closet/${slug}.webp`] ?? null) : null;
+  return defaultPhotoOf(item.name);
 }
