@@ -105,15 +105,16 @@ export function AddEventSheet({ start, onClose }: { start: string; onClose: () =
             ))}
           </select>
         </label>
+        {/* 사파리는 label 로 감싼 시간 입력을 누르면 포커스가 첫 칸으로 되돌아가 시간을 못 바꿈. 그래서 감싸지 않고 htmlFor 로 연결 */}
         <div className="field-row">
-          <label className="field">
-            <span className="field__label">시작</span>
-            <input className="input" type="time" value={from} onChange={(e) => setFrom(e.target.value)} />
-          </label>
-          <label className="field">
-            <span className="field__label">끝</span>
-            <input className="input" type="time" value={to} onChange={(e) => setTo(e.target.value)} />
-          </label>
+          <div className="field">
+            <label className="field__label" htmlFor="event-from">시작</label>
+            <input id="event-from" className="input" type="time" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="field">
+            <label className="field__label" htmlFor="event-to">끝</label>
+            <input id="event-to" className="input" type="time" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
         </div>
         {preview && preview.maskedCount > 0 && (
           <p className="note">
