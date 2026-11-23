@@ -106,12 +106,40 @@ export function FindCards({ state, selectedUrl, onSelect, compact = false }: Fin
   );
 }
 
+// 상품 사진을 못 가져온 카드(무신사는 서버 요청을 막아 대부분 사진이 없음)에 보여 줄 쇼핑몰 표시. 주소의 도메인으로 고른다
+const MALL_LOGOS: Array<{ domain: string; label: string; bg: string; fg: string }> = [
+  { domain: 'musinsa.com', label: 'MUSINSA', bg: '#000000', fg: '#ffffff' },
+  { domain: '29cm.co.kr', label: '29CM', bg: '#111111', fg: '#ffffff' },
+  { domain: 'zigzag.kr', label: 'zigzag', bg: '#ff4b8b', fg: '#ffffff' },
+  { domain: 'wconcept.co.kr', label: 'W CONCEPT', bg: '#ffffff', fg: '#000000' },
+  { domain: 'ssg.com', label: 'SSG.COM', bg: '#ffd400', fg: '#111111' },
+  { domain: 'lotteon.com', label: 'LOTTE ON', bg: '#e60012', fg: '#ffffff' },
+  { domain: '11st.co.kr', label: '11st', bg: '#ff0038', fg: '#ffffff' },
+  { domain: 'coupang.com', label: 'coupang', bg: '#ffffff', fg: '#e52528' },
+];
+
+function MallLogo({ url, mall }: { url: string; mall: string }) {
+  let host = '';
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    host = '';
+  }
+  const logo = MALL_LOGOS.find((l) => host === l.domain || host.endsWith(`.${l.domain}`));
+  if (!logo) return <span aria-hidden="true">{mall}</span>;
+  return (
+    <span className="find-card__logo" style={{ background: logo.bg, color: logo.fg }} aria-hidden="true">
+      {logo.label}
+    </span>
+  );
+}
+
 function FindCard({ item, originalPrice, selected, onSelect, compact }: { item: FindItem; originalPrice: number | null; selected: boolean; onSelect: () => void; compact: boolean }) {
   const saved = originalPrice !== null && originalPrice > item.price ? originalPrice - item.price : null;
   const body = (
     <>
       <span className="find-card__thumb">
-        {item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span aria-hidden="true">{item.mall}</span>}
+        {item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <MallLogo url={item.url} mall={item.mall} />}
       </span>
       <span className="find-card__body">
         <span className="find-card__mall">{item.mall}</span>
