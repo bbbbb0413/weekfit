@@ -23,4 +23,12 @@ class FindServiceTest {
         assertThat(FindService.toCategory(FindCategory.SHOES)).isEqualTo(Category.SHOES);
         assertThat(FindService.toCategory(null)).isNull();
     }
+
+    @Test
+    void retryTextKeepsRequestAndListsFailedQueries() {
+        assertThat(FindService.retryText("블랙 와이드 슬랙스", java.util.List.of())).isEqualTo("블랙 와이드 슬랙스");
+        String retry = FindService.retryText("블랙 와이드 슬랙스", java.util.List.of("블랙 와이드 핀턱 슬랙스"));
+        assertThat(retry).startsWith("블랙 와이드 슬랙스").contains("블랙 와이드 핀턱 슬랙스");
+        assertThat(FindService.retryText(null, java.util.List.of("q"))).contains("사진 속 옷");
+    }
 }
