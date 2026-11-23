@@ -50,6 +50,16 @@ public class AppUser {
         warmthBias = Math.max(-MAX_BIAS, Math.min(MAX_BIAS, warmthBias + delta));
     }
 
+    /** 기록 취소 때 그 기록의 체감 보정을 되돌린다. */
+    public void revertFeedback(ThermalFeedback feedback) {
+        int delta = switch (feedback) {
+            case COLD -> -1;
+            case HOT -> 1;
+            case OK -> 0;
+        };
+        warmthBias = Math.max(-MAX_BIAS, Math.min(MAX_BIAS, warmthBias + delta));
+    }
+
     public UUID getId() {
         return id;
     }

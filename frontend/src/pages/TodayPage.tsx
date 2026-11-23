@@ -17,7 +17,7 @@ import { useToast } from '../components/Toast';
 import { WearSheet } from '../components/WearSheet';
 import { WeatherBand } from '../components/WeatherBand';
 import { AlertIcon } from '../components/icons';
-import { useClothes, useEvaluation, useEvents, useWearLogs, useWeather, useWeekPlan } from '../hooks/queries';
+import { useCancelWear, useClothes, useEvaluation, useEvents, useWearLogs, useWeather, useWeekPlan } from '../hooks/queries';
 import { formatMonthDay, formatTime, today } from '../lib/date';
 import { TPO_LABEL, itemLabel, slotOf } from '../lib/labels';
 import { TAP, fadeUp, list, listItem } from '../lib/motion';
@@ -50,7 +50,8 @@ export function TodayPage() {
   const weather = useWeather();
   const events = useEvents(date, date);
   const plan = useWeekPlan(date);
-  const { worn, custom, wornOn, put, remove, follow } = useOutfit();
+  const { worn, custom, wornOn, put, remove, follow, clearWorn } = useOutfit();
+  const cancelWear = useCancelWear();
   const queryClient = useQueryClient();
 
   const [picking, setPicking] = useState<OutfitSlot | null>(null);
@@ -182,6 +183,15 @@ export function TodayPage() {
   const question = !tpoChoice ? (event?.analysis.clarifyQuestion ?? null) : null;
   const done = wornOn === date || (logs.data?.length ?? 0) > 0;
   const loading = clothes.isPending || plan.isPending;
+  const cancelToday = () => {
+    cancelWear.mutate((logs.data ?? []).map((log) => log.id), {
+      onSuccess: () => {
+        clearWorn();
+        toast('오늘 기록을 취소했어요.');
+      },
+      onError: (e) => toast((e as Error).message),
+    });
+  };
 
   return (
     <div className="page page--today">
@@ -405,9 +415,14 @@ export function TodayPage() {
             {done ? (
               <p className="actions__done">
                 오늘 입은 옷으로 기록했어요.
-                <button type="button" className="text-button" onClick={() => setRecording(true)}>
-                  다시 기록
-                </button>
+                <span className="actions__links">
+                  <button type="button" className="text-button" onClick={() => setRecording(true)}>
+                    다시 기록
+                  </button>
+                  <button type="button" className="text-button" disabled={cancelWear.isPending} onClick={cancelToday}>
+                    {cancelWear.isPending ? '취소 중' : '기록 취소'}
+                  </button>
+                </span>
               </p>
             ) : (
               <m.button type="button" className="button button--primary button--block" whileTap={TAP} disabled={!hasBase} onClick={() => setRecording(true)}>

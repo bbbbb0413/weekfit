@@ -1045,6 +1045,11 @@ button.board__cell:hover {
   border-top: 1px solid var(--line);
 }
 
+.actions__links {
+  display: flex;
+  gap: 14px;
+}
+
 .actions__done {
   display: flex;
   align-items: center;

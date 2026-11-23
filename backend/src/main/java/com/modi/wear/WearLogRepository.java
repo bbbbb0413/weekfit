@@ -2,10 +2,15 @@ package com.modi.wear;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WearLogRepository extends JpaRepository<WearLog, UUID> {
 
     List<WearLog> findByUserIdAndWornOnBetweenOrderByWornOnAsc(UUID userId, LocalDate from, LocalDate to);
+
+    Optional<WearLog> findByIdAndUserId(UUID id, UUID userId);
+
+    List<WearLog> findByUserId(UUID userId);
 }

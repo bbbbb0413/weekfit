@@ -105,6 +105,17 @@ export function useRecordWear() {
   return useMutation({ mutationFn: (body: WearLogRequest) => api.recordWear(body), onSuccess: refresh });
 }
 
+// 오늘 기록을 모두 취소(다시 기록하면 같은 날 기록이 여러 개일 수 있음)
+export function useCancelWear() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) await api.cancelWear(id);
+    },
+    onSuccess: refresh,
+  });
+}
+
 export function useCreateEvent() {
   const refresh = useRefresh();
   return useMutation({ mutationFn: (body: EventInput) => api.createEvent(body), onSuccess: refresh });
