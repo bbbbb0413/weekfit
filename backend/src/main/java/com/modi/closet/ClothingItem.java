@@ -132,6 +132,13 @@ public class ClothingItem {
         updatedAt = now;
     }
 
+    /** 착용 기록 취소. lastWornOn 은 남은 기록 중 가장 최근 날짜(없으면 null)로 되돌린다. */
+    public void undoWear(LocalDate previousLastWornOn, Instant now) {
+        wearsSinceWash = Math.max(0, wearsSinceWash - 1);
+        lastWornOn = previousLastWornOn;
+        updatedAt = now;
+    }
+
     public void startWash(Instant now, Duration dryTime) {
         status = ItemStatus.DRYING;
         dryUntil = now.plus(dryTime);

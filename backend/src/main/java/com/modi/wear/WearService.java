@@ -2,6 +2,7 @@ package com.modi.wear;
 
 import com.modi.closet.ClothingItem;
 import com.modi.closet.ClothingService;
+import com.modi.common.error.NotFoundException;
 import com.modi.common.user.AppUser;
 import com.modi.common.user.UserService;
 import java.time.Clock;
@@ -42,6 +43,25 @@ public class WearService {
         }
         WearLog saved = repository.save(WearLog.of(userId, request.date(), ids, request.feedback(), now));
         return WearLogResponse.of(saved, user.getWarmthBias());
+    }
+
+    /** 착용 기록 취소. 옷의 착용 횟수와 마지막 착용일, 사용자 체감 보정을 기록 전으로 되돌린다. */
+    @Transactional
+    public void cancel(UUID userId, UUID logId) {
+        WearLog log = repository.findByIdAndUserId(logId, userId)
+                .orElseThrow(() -> new NotFoundException("착용 기록을 찾을 수 없습니다."));
+        List<WearLog> others = repository.findByUserId(userId).stream()
+                .filter(l -> !l.getId().equals(logId)).toList();
+        Instant now = clock.instant();
+        for (ClothingItem item : clothingService.findAll(userId, log.getItemIds())) {
+            LocalDate previous = others.stream().filter(l -> l.getItemIds().contains(item.getId()))
+                    .map(WearLog::getWornOn).max(LocalDate::compareTo).orElse(null);
+            item.undoWear(previous, now);
+        }
+        if (log.getFeedback() != null) {
+            userService.getOrCreate(userId).revertFeedback(log.getFeedback());
+        }
+        repository.delete(log);
     }
 
     @Transactional(readOnly = true)

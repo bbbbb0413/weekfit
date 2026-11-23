@@ -9,7 +9,9 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +34,14 @@ public class WearController {
     public ApiResponse<WearLogResponse> record(@Parameter(hidden = true) @CurrentUserId UUID userId,
             @Valid @RequestBody WearLogRequest request) {
         return ApiResponse.ok(service.record(userId, request));
+    }
+
+    @Operation(summary = "착용 기록 취소 (옷 착용 횟수와 체감 보정도 되돌림)")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> cancel(@Parameter(hidden = true) @CurrentUserId UUID userId,
+            @PathVariable UUID id) {
+        service.cancel(userId, id);
+        return ApiResponse.ok(null);
     }
 
     @Operation(summary = "착용 기록 조회")

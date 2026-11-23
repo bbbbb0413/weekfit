@@ -18,6 +18,7 @@ interface OutfitState {
   remove: (slot: OutfitSlot) => void;
   follow: (items: Clothing[]) => void;
   markWorn: (date: string) => void;
+  clearWorn: () => void;
 }
 
 function place(worn: Worn, item: Clothing): Worn {
@@ -61,6 +62,15 @@ export const useOutfit = create<OutfitState>((set) => ({
     }
     // 기록한 뒤 추천이 다시 계산돼도 입은 옷이 보드에 남도록 고정
     set({ wornOn: date, custom: true });
+  },
+  // 기록 취소: 다시 오늘 추천 코디를 따라가게 함
+  clearWorn: () => {
+    try {
+      localStorage.removeItem(WORN_KEY);
+    } catch {
+      // 저장소를 못 쓰는 환경
+    }
+    set({ wornOn: null, custom: false });
   },
 }));
 
