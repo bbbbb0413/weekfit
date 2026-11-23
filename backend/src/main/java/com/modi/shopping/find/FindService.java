@@ -31,6 +31,8 @@ import org.springframework.stereotype.Service;
 public class FindService {
 
     static final int MAX_TEXT = 300;
+    /** 상품을 못 찾으면 검색어를 바꿔 다시 찾는다. 처음 1번을 포함한 전체 시도 횟수 */
+    static final int MAX_ATTEMPTS = 5;
     private static final long CACHE_MILLIS = 30 * 60 * 1000L;
     private static final int MAX_CACHE = 500;
     private static final Pattern URL = Pattern.compile("https://\\S+");
@@ -78,7 +80,8 @@ public class FindService {
             return hit.result();
         }
         FindResult result = compute(jpeg, safeText, now);
-        if (result.aiAvailable()) {
+        // 못 찾은 결과는 캐시하지 않는다. 웹 검색은 같은 검색어도 성공과 실패가 갈려, 실패를 30분 붙잡아 두면 예시 버튼이 계속 실패로 보인다
+        if (result.aiAvailable() && !result.items().isEmpty()) {
             if (cache.size() >= MAX_CACHE) {
                 cache.entrySet().removeIf(e -> now - e.getValue().at() >= CACHE_MILLIS);
             }
@@ -88,30 +91,64 @@ public class FindService {
     }
 
     private FindResult compute(byte[] jpeg, String text, long startedAt) {
-        List<ProductFinder.Found> founds = finder.isEnabled() ? searchInParallel(jpeg, text) : List.of();
-        if (founds.isEmpty()) {
-            return new FindResult(null, null, null, List.of(), fallback(text, null, null), false,
-                    List.of(WARN_AI_DOWN), clock.millis() - startedAt);
+        if (!finder.isEnabled()) {
+            return aiDown(text, startedAt);
         }
-        List<List<FindAiResult.AiItem>> perCall = new ArrayList<>();
-        int rejected = 0;
-        for (ProductFinder.Found found : founds) {
-            FindVerifier.Outcome outcome = FindVerifier.verify(found.result(), found.searchedUrls());
-            perCall.add(outcome.items());
-            rejected += outcome.rejected();
+        List<String> tried = new ArrayList<>();
+        List<ProductFinder.Found> firstFounds = null;
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            List<ProductFinder.Found> founds = searchInParallel(jpeg, retryText(text, tried));
+            if (founds.isEmpty()) {
+                break;
+            }
+            if (firstFounds == null) {
+                firstFounds = founds;
+            }
+            List<List<FindAiResult.AiItem>> perCall = new ArrayList<>();
+            int rejected = 0;
+            for (ProductFinder.Found found : founds) {
+                FindVerifier.Outcome outcome = FindVerifier.verify(found.result(), found.searchedUrls());
+                perCall.add(outcome.items());
+                rejected += outcome.rejected();
+            }
+            List<FindAiResult.AiItem> merged = FindVerifier.merge(perCall);
+            log.info("Product find attempt={} calls={} kept={} rejected={}", attempt, founds.size(), merged.size(),
+                    rejected);
+            if (!merged.isEmpty()) {
+                return toResult(founds, withImages(merged), text, startedAt);
+            }
+            founds.stream().map(f -> f.result().searchQuery())
+                    .filter(q -> q != null && !q.isBlank() && !tried.contains(q)).forEach(tried::add);
         }
-        List<FindAiResult.AiItem> merged = FindVerifier.merge(perCall);
-        log.info("Product find calls={} kept={} rejected={}", founds.size(), merged.size(), rejected);
+        return firstFounds == null ? aiDown(text, startedAt) : toResult(firstFounds, List.of(), text, startedAt);
+    }
+
+    private FindResult aiDown(String text, long startedAt) {
+        return new FindResult(null, null, null, List.of(), fallback(text, null, null), false,
+                List.of(WARN_AI_DOWN), clock.millis() - startedAt);
+    }
+
+    private FindResult toResult(List<ProductFinder.Found> founds, List<FindResult.Item> items, String text,
+            long startedAt) {
         FindAiResult first = founds.getFirst().result();
         String searchQuery = founds.stream().map(f -> f.result().searchQuery())
                 .filter(q -> q != null && !q.isBlank()).findFirst().orElse(null);
         FindAiResult.Original original = founds.stream().map(f -> f.result().original())
                 .filter(o -> o != null && o.price() != null).findFirst().orElse(null);
-        List<FindResult.Item> items = withImages(merged);
         List<String> warnings = List.of(items.isEmpty() ? WARN_NOT_FOUND : WARN_PRICE);
         Category category = items.isEmpty() ? null : toCategory(items.getFirst().category());
         return new FindResult(first.analysis(), searchQuery, original, items,
                 fallback(text, searchQuery, category), true, warnings, clock.millis() - startedAt);
+    }
+
+    /** 재시도 때는 앞서 실패한 검색어를 알려 주고, 옷 종류와 색은 두고 세부 조건을 빼서 넓게 찾게 한다. */
+    static String retryText(String text, List<String> tried) {
+        if (tried.isEmpty()) {
+            return text;
+        }
+        String base = text == null || text.isBlank() ? "이 사진 속 옷과 비슷하고 더 싼 제품을 찾아줘" : text;
+        return base + "\n\n앞선 검색어(" + String.join(", ", tried) + ")로는 조건에 맞는 제품을 찾지 못했다. "
+                + "이번에는 이 검색어들과 다른 검색어를 써라. 옷 종류와 색은 유지하고, 핏, 소재, 디테일 같은 세부 조건을 빼서 더 넓게 검색한다.";
     }
 
     /**
