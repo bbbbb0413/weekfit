@@ -9,8 +9,11 @@ info:
     - 사용자 식별은 `X-User-Id` 헤더(UUID)로 한다. 헤더가 없으면 데모 사용자(`00000000-0000-0000-0000-000000000001`)로 처리한다.
       브라우저마다 UUID 를 한 번 만들어 저장해 두고 매 요청에 보내는 방식을 권장한다.
     - 날짜는 `YYYY-MM-DD`, 일시는 ISO-8601(`2026-11-22T14:00:00+09:00`)이다. 기준 시간대는 Asia/Seoul 이다.
-    - AI 를 호출하는 POST 엔드포인트는 IP 당 시간당 요청 수가 제한된다(429).
+    - AI 를 호출하는 엔드포인트(POST, PUT 과 `GET /api/plans/week`)는 IP 당 시간 60회로 제한된다(429).
+      웹 검색 제품 찾기(`/api/shopping/find`, `/api/shopping/look/find`)는 별도로 시간 10회 한도가 더 있다.
 servers:
+  - url: https://modi-api-ch95.onrender.com
+    description: 배포 서버 (Render 무료 인스턴스, 잠들어 있으면 첫 응답이 1~3분 걸린다)
   - url: http://localhost:8080
     description: 로컬
 tags:
@@ -27,7 +30,11 @@ tags:
   - name: outfits
     description: 옷 평가
   - name: shopping
-    description: 사진으로 가성비 옷 찾기
+    description: 가성비 옷 찾기, 살까 말까
+  - name: avatar
+    description: 아바타 옷 그림
+  - name: ops
+    description: 운영 (AI 사용량)
   - name: images
     description: 저장된 이미지
 
@@ -113,6 +120,31 @@ paths:
       summary: 옷 삭제
       responses:
         '200': { $ref: '#/components/responses/Empty' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/clothes/{id}/avatar-paint:
+    get:
+      tags: [avatar]
+      summary: 아바타 옷 그림
+      description: |
+        옷 사진, 이름, 종류, 색과 캐릭터의 관절 기준점을 AI 에 주고, 그 캐릭터가 입을 옷 한 벌만 투명 배경 SVG 로 받는다.
+        옷 한 벌과 캐릭터 조합마다 한 번만 그리고 저장소에 보관한다. 옷 이름, 색, 사진이 바뀌면 다시 그린다.
+        데모 옷장 옷은 미리 그려 둔 그림을 바로 돌려준다. 소품(ACCESSORY)은 그리지 않는다.
+        AI 가 실패하거나 SVG 검사를 통과하지 못하면 `svg` 가 null 이고, 화면은 옷 색으로 칠한다.
+      parameters:
+        - { $ref: '#/components/parameters/UserId' }
+        - { $ref: '#/components/parameters/Id' }
+        - { name: model, in: query, required: false, schema: { type: string, enum: [mannequin, wave, hip, cross, modi], default: mannequin }, description: '캐릭터 모델' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties: { data: { $ref: '#/components/schemas/AvatarPaint' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   /api/clothes/{id}/status:
@@ -227,6 +259,20 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/Envelope'
                   - properties: { data: { $ref: '#/components/schemas/WearLog' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/wear-logs/{id}:
+    delete:
+      tags: [wear]
+      summary: 착용 기록 취소
+      description: |
+        기록 전으로 되돌린다. 옷마다 세탁 후 입은 횟수를 1 줄이고(0 아래로는 내려가지 않는다),
+        마지막 착용일은 남은 다른 기록 중 가장 최근 날짜로 다시 정한다. 체감 피드백이 있던 기록이면 보온 보정값도 반대로 되돌린다.
+      parameters:
+        - { $ref: '#/components/parameters/UserId' }
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200': { $ref: '#/components/responses/Empty' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   /api/weather:
@@ -432,6 +478,7 @@ paths:
                 tpo: { $ref: '#/components/schemas/Tpo' }
                 lat: { type: number }
                 lon: { type: number }
+                ai: { type: boolean, default: true, description: 'false 면 AI 를 부르지 않고 규칙 점수만 돌려준다' }
       responses:
         '200':
           description: OK
@@ -499,9 +546,10 @@ paths:
       tags: [shopping]
       summary: 가성비 제품 찾기(AI 웹 검색)
       description: |
-        사진이나 텍스트 속 옷과 비슷하면서 더 싼 실제 제품을 최대 2개 찾는다. 쇼핑몰을 두 묶음으로 나눠 동시에 검색하며 20~30초 걸린다.
+        사진이나 텍스트 속 옷과 비슷하면서 더 싼 실제 제품을 최대 2개 찾는다. 쇼핑몰을 두 묶음으로 나눠 동시에 검색하며 한 번에 20~30초 걸린다.
+        조건에 맞는 제품이 없으면 검색어를 바꿔 처음 시도를 포함해 최대 5번까지 찾는다. 다시 찾을 때는 앞서 실패한 검색어를 알려 주고 세부 조건을 빼서 넓게 찾는다.
         AI 가 실패하거나 제품을 못 찾아도 200 으로 쇼핑몰 검색 링크(fallbackLinks)를 돌려준다. IP 당 시간 10회로 제한한다.
-        같은 사진·텍스트 요청은 30분 동안 캐시한다.
+        제품을 찾은 결과만 같은 사진, 텍스트 요청에 30분 동안 다시 쓴다. 못 찾은 결과는 캐시하지 않는다.
       parameters: [{ $ref: '#/components/parameters/UserId' }]
       requestBody:
         required: true
@@ -513,6 +561,68 @@ paths:
               properties:
                 image: { type: string, format: binary, description: '옷만 나온 사진이나 상품 캡처. 얼굴이 나오지 않게 한다' }
                 text: { type: string, maxLength: 300, example: '폴로 랄프로렌 케이블 니트 베스트 네이비 비슷한데 더 싼 거' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties: { data: { $ref: '#/components/schemas/FindResult' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /api/shopping/look:
+    post:
+      tags: [shopping]
+      summary: '살까 말까: 코디 사진을 부위별 카드로'
+      description: |
+        코디 사진 한 장을 AI 한 번 호출로 겉옷, 상의(또는 원피스), 하의, 신발 카드 최대 4장으로 나눈다. 가방, 모자 같은 소품은 넣지 않는다.
+        카드마다 상품명, 특징, 사진 속 위치, 속성, 검색어가 있다. 옷장 비교는 AI 를 다시 부르지 않고 유사도 규칙으로 하며,
+        거의 같은 옷(유사도 0.85 이상)이 있을 때만 `duplicate` 를 채운다. 사진은 저장하지 않는다.
+        AI 가 실패하면 200 으로 빈 `pieces` 와 `aiAvailable=false` 를 돌려준다.
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties: { data: { $ref: '#/components/schemas/LookResult' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /api/shopping/look/find:
+    post:
+      tags: [shopping]
+      summary: '살까 말까: 카드 하나의 가성비 제품 찾기'
+      description: |
+        카드의 검색어 후보를 최대 3개까지 차례로 써 본다. 사진은 첫 검색어에만 함께 보내고, 검색어마다 `/api/shopping/find` 의 재시도가 함께 돈다.
+        제품이 나오거나 AI 를 쓸 수 없으면 바로 멈춘다. 요청 제한은 1회로 센다.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [queries]
+              properties:
+                image: { type: string, format: binary, description: '카드 사진(선택)' }
+                queries: { type: string, description: '검색어 후보. 줄바꿈으로 구분한다(검색어 안의 쉼표가 나뉘지 않게). 앞의 3개만 쓰고 각 300자까지', example: "울 혼방 더블 브레스티드 롱코트\n그레이 롱코트" }
       responses:
         '200':
           description: OK
@@ -540,6 +650,21 @@ paths:
             image/jpeg: { schema: { type: string, format: binary } }
             image/png: { schema: { type: string, format: binary } }
         '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/ai-usage:
+    get:
+      tags: [ops]
+      summary: AI 사용량
+      description: 서버가 켜진 뒤 기능별 AI 호출 횟수, 실패 수, 입력과 출력 토큰, 최근 호출 30건. 메모리에만 두므로 재시작하면 0부터 다시 센다.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties: { data: { $ref: '#/components/schemas/AiUsageReport' } }
 
 components:
   parameters:
@@ -875,14 +1000,80 @@ components:
         matches:
           type: array
           description: 유사도 높은 순 최대 3개
+          items: { $ref: '#/components/schemas/SimilarMatch' }
+        pairableCount: { type: integer, description: '이 옷과 함께 입을 수 있는 내 옷 수' }
+        comment: { type: string }
+    SimilarMatch:
+      type: object
+      properties:
+        item: { $ref: '#/components/schemas/Clothing' }
+        similarity: { type: number, minimum: 0, maximum: 1 }
+        reasons: { type: array, items: { type: string }, example: ['같은 셔츠', '색 일치: 네이비'] }
+
+    LookBox:
+      type: object
+      description: '사진 전체를 가로 1, 세로 1로 볼 때 이 옷이 있는 사각형. x, y 는 왼쪽 위 모서리'
+      properties:
+        x: { type: number, minimum: 0, maximum: 1 }
+        y: { type: number, minimum: 0, maximum: 1 }
+        w: { type: number, minimum: 0.05, maximum: 1 }
+        h: { type: number, minimum: 0.05, maximum: 1 }
+    LookPiece:
+      type: object
+      properties:
+        index: { type: integer, description: '카드 순서 번호' }
+        productName: { type: [string, 'null'], maxLength: 80, example: '울 혼방 싱글 브레스티드 롱코트' }
+        brandGuess: { type: [string, 'null'], description: '로고나 뚜렷한 특징으로 알아본 브랜드. 모르면 null' }
+        spec: { type: [string, 'null'], example: '무릎 아래 기장, 노치드 라펠, 단추 2개' }
+        box: { $ref: '#/components/schemas/LookBox' }
+        attributes: { $ref: '#/components/schemas/ClothingSuggestion' }
+        searchQuery: { type: [string, 'null'], maxLength: 80 }
+        duplicate:
+          oneOf:
+            - $ref: '#/components/schemas/SimilarMatch'
+            - type: 'null'
+          description: '옷장에 거의 같은 옷이 있을 때만 값이 있다'
+    LookResult:
+      type: object
+      properties:
+        pieces: { type: array, maxItems: 4, items: { $ref: '#/components/schemas/LookPiece' }, description: '겉옷, 상의(또는 원피스), 하의, 신발 순서' }
+        aiAvailable: { type: boolean, description: 'false 면 AI 분석에 실패했다. pieces 는 빈 배열이다' }
+
+    AvatarPaint:
+      type: object
+      properties:
+        svg: { type: [string, 'null'], description: '캐릭터 캔버스(viewBox) 기준 SVG. AI 가 못 그렸으면 null' }
+        aiAvailable: { type: boolean, description: 'AI 가 그린 그림(미리 그려 둔 데모 그림 포함)이면 true' }
+
+    AiUsageTotals:
+      type: object
+      properties:
+        calls: { type: integer }
+        failures: { type: integer }
+        inputTokens: { type: integer }
+        outputTokens: { type: integer }
+    AiUsageReport:
+      type: object
+      properties:
+        since: { type: string, format: date-time, description: '집계를 시작한 시각(서버 기동 시각)' }
+        total: { $ref: '#/components/schemas/AiUsageTotals' }
+        byFeature:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/AiUsageTotals' }
+          description: '기능 이름(호출한 클래스 이름)별 합계. 예: PlanExplainer, ProductFinder'
+        recent:
+          type: array
+          description: 최근 호출 30건, 최신 순
           items:
             type: object
             properties:
-              item: { $ref: '#/components/schemas/Clothing' }
-              similarity: { type: number, minimum: 0, maximum: 1 }
-              reasons: { type: array, items: { type: string }, example: ['같은 셔츠', '색 일치: 네이비'] }
-        pairableCount: { type: integer, description: '이 옷과 함께 입을 수 있는 내 옷 수' }
-        comment: { type: string }
+              at: { type: string, format: date-time }
+              feature: { type: string }
+              model: { type: string }
+              inputTokens: { type: integer }
+              outputTokens: { type: integer }
+              millis: { type: integer }
+              ok: { type: boolean }
 
     FindCategory:
       type: string
